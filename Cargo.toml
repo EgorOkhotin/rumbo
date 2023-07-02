@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "rumbo-web",
+    "rumbo-logic"
+]
+
