@@ -17,7 +17,7 @@ COPY --from=uiBuild /rumbo_ui/dist/rumbo_ui/ /rumbo/target/release/static
 RUN cargo build --release
 
 # our final base
-FROM rust:slim-buster
+FROM rust:latest
 
 # copy the build artifact from the build stage
 COPY --from=build /rumbo/target/release/ ./rumbo
