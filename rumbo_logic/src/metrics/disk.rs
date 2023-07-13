@@ -1,12 +1,21 @@
-use sysinfo::{DiskExt, System, SystemExt};
+use super::prelude::*;
 
-pub struct DiskSpace {
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct DiskSpaceInfo {
     pub name: String,
-    pub free_amount: u64,
     pub total_amount: u64,
+    pub free_amount: u64,
 }
 
-pub fn get_disk_spaces() -> Vec<DiskSpace> {
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct DiskUsageInfo {
+    name: String,
+    load_percents: u64,
+    reading_speed: u64,
+    writing_speed: u64,
+}
+
+pub fn get_disk_spaces() -> Vec<DiskSpaceInfo> {
     let mut system = System::new();
     system.refresh_disks_list();
 
@@ -18,7 +27,7 @@ pub fn get_disk_spaces() -> Vec<DiskSpace> {
             let free_amount = (disk.available_space() as f64 / 1024.0f64.powi(3)).round() as u64;
             let name = disk.mount_point().display().to_string();
 
-            DiskSpace {
+            DiskSpaceInfo {
                 name,
                 free_amount,
                 total_amount,

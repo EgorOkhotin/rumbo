@@ -1,4 +1,5 @@
-pub use mongodb::{options::ClientOptions, Client, bson::{DateTime, oid::ObjectId}, error::Result, Collection};
+use super::prelude::*;
+use mongodb::{options::ClientOptions, Client, Collection};
 
 #[derive(Clone)]
 pub struct DbAdapter {

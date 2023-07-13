@@ -1,12 +1,13 @@
-use sysinfo::{DiskExt, NetworkExt, System, SystemExt};
+use super::prelude::*;
 
-pub struct NetworkUsage {
-    pub name: String,
-    pub sending_speed: u64,
-    pub receiving_speed: u64,
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct NetworkUsageInfo {
+    name: String,
+    sending_speed: u64,
+    receiving_speed: u64,
 }
 
-pub fn get_network_usage() -> Vec<NetworkUsage> {
+pub fn get_network_usage() -> Vec<NetworkUsageInfo> {
     let mut system = System::new_all();
     system.refresh_networks();
 
@@ -18,7 +19,7 @@ pub fn get_network_usage() -> Vec<NetworkUsage> {
             let sending_speed = (data.total_received() as f64 / 1024.0f64.powi(2)).round() as u64;
             let receiving_speed =
                 (data.total_transmitted() as f64 / 1024.0f64.powi(2)).round() as u64;
-            NetworkUsage {
+                NetworkUsageInfo {
                 name,
                 sending_speed,
                 receiving_speed,
