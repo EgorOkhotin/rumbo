@@ -14,16 +14,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have as title 'rumbo-ui'`, () => {
+  it(`should have as title 'rumbo_ui'`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('rumbo-ui');
+    expect(app.title).toEqual('rumbo_ui');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.content span')?.textContent).toContain('rumbo-ui app is running!');
+    expect(compiled.querySelector('.content span')?.textContent).toContain('rumbo_ui app is running!');
   });
 });
