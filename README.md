@@ -63,6 +63,30 @@ The profit of this separation that rumbo_logic could be covered fully by tests a
 ## Keeping GIT history
 In case of moving or renaming files is better to keep the history of previous changes in this section you could find a guide how to do it.
 
+Move files with git and keep file history
+Be sure you don't have files uncommitted, if not commit them before next step.
+
+    git status
+
+In project-directory create FOLDER subfolder
+
+    mkdir FOLDER
+
+Move files with git mv except FOLDER subfolder to avoid errors
+
+    for file in $(ls | grep -v 'FOLDER'); do git mv $file FOLDER; done;
+
+Move specific files...
+
+    git mv FILE FOLDER/
+
+Commit changes
+
+    git commit -m 'Moved files to FOLDER/'
+
+That's all !
+
+    git log -M summary
 
 ## Commands for docker
 Commands for Dockerfile:
