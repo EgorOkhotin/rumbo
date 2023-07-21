@@ -17,6 +17,7 @@ use prelude::*;
 
 mod config;
 mod metrics_controller;
+mod instances_controller;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -31,10 +32,17 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(app_sate.clone()))
             .wrap(middleware::Logger::default())
+
             .service(metrics_controller::get_metric)
             .service(metrics_controller::create_metric)
             .service(metrics_controller::delete_metric)
             .service(metrics_controller::update_metric)
+
+            .service(instances_controller::get_instance)
+            .service(instances_controller::create_instance)
+            .service(instances_controller::delete_instance)
+            .service(instances_controller::update_instance)
+
             .service(fs::Files::new("/", config.static_files_path).index_file("index.html"))
     })
     .bind((config.host_address, config.port))?

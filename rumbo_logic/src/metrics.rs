@@ -1,8 +1,7 @@
 pub mod prelude {
     pub(super) use mongodb::{
-        bson::serde_helpers::bson_datetime_as_rfc3339_string,
-        bson::serde_helpers::deserialize_hex_string_from_object_id,
-        bson::{doc, DateTime},
+        bson::serde_helpers::{bson_datetime_as_rfc3339_string, serialize_object_id_as_hex_string},
+        bson::{doc, DateTime, oid::ObjectId},
         Collection,
     };
     pub use serde::{Deserialize, Serialize};
@@ -21,7 +20,6 @@ pub mod prelude {
     pub use super::MetricType;
     pub use super::MetricsService;
 }
-use mongodb::{options::InsertOneOptions, bson::{Document, oid::ObjectId, Bson}};
 use prelude::*;
 
 mod cpu;
@@ -33,7 +31,9 @@ mod ram;
 pub struct Metric {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
-    pub instance_name: String,
+
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
+    pub instance_id: ObjectId,
 
     #[serde(with = "bson_datetime_as_rfc3339_string")]
     timestamp: DateTime,
@@ -56,17 +56,25 @@ pub enum MetricType {
 
 pub struct MetricsService {
     db_adapter: Arc<DbAdapter>,
+    instances_service: Arc<InstanceService>
 }
 
 impl MetricsService {
-    pub fn new(app_state: &RumboApp) -> Self {
+    pub fn new(db_adapter: &Arc<DbAdapter>, instances_service: &Arc<InstanceService>) -> Self {
         MetricsService {
-            db_adapter: app_state.db_adapter.clone(),
+            db_adapter: db_adapter.clone(),
+            instances_service: instances_service.clone()
         }
+    }
+
+    pub fn as_arc(self) -> Arc<Self> {
+        Arc::from(self)
     }
 
     pub async fn create(&self, metric: &Metric) -> Result<Metric> {
         let collection = self.get_collection();
+
+        self.get_instance(metric).await?;
 
         let result = collection.insert_one(metric, None).await?;
         let inserted_id = result.inserted_id.as_object_id().unwrap().to_hex();
@@ -96,6 +104,9 @@ impl MetricsService {
         let id = metric.id.unwrap();
         let filter = get_id_filter_from_object(&id);
 
+        // just check that instance exists
+        self.get_instance(metric).await?;
+
         let result = collection.replace_one(filter, metric, None).await?;
 
         if result.modified_count > 0 {
@@ -109,17 +120,17 @@ impl MetricsService {
         }
     }
 
+    async fn get_instance(&self, metric: &Metric) -> Result<Instance> {
+        let instance = self.instances_service.get(metric.instance_id.to_hex().as_str()).await?;
+        if instance.is_none() {
+            todo!("return error that instance doesn't exist");
+        }
+
+        Ok(instance.unwrap())
+    }
+
     fn get_collection(&self) -> Collection<Metric> {
-        const COLLECTION_NAME: &'static str = "rumbo_app";
+        const COLLECTION_NAME: &'static str = "metrics";
         self.db_adapter.get_collection::<Metric>(COLLECTION_NAME)
     }
-}
-
-fn get_id_filter_from_str(id: &str) -> Document {
-    let object_id = ObjectId::parse_str(id).unwrap();
-    get_id_filter_from_object(&object_id)
-}
-
-fn get_id_filter_from_object(id: &ObjectId) -> Document {
-    doc! {"_id": id }
 }

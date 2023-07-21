@@ -1,5 +1,19 @@
-use super::prelude::*;
-use mongodb::{options::ClientOptions, Client, Collection};
+pub mod prelude {
+    pub(super) use mongodb::{
+        options::ClientOptions, 
+        Client, 
+        Collection,
+        bson::{doc, Document, oid::ObjectId}
+    };
+
+    // use from lib.rs
+    pub use super::super::prelude::*;
+
+    pub use super::DbAdapter;
+    pub use super::{get_id_filter_from_object, get_id_filter_from_str};
+}
+use prelude::*;
+
 
 #[derive(Clone)]
 pub struct DbAdapter {
@@ -28,4 +42,13 @@ impl DbAdapter {
     pub fn get_collection<T>(&self, collection_name: &str) -> Collection<T> {
         self.client.database(DB_NAME).collection::<T>(collection_name)
     }
+}
+
+pub fn get_id_filter_from_str(id: &str) -> Document {
+    let object_id = ObjectId::parse_str(id).unwrap();
+    get_id_filter_from_object(&object_id)
+}
+
+pub fn get_id_filter_from_object(id: &ObjectId) -> Document {
+    doc! {"_id": id }
 }
