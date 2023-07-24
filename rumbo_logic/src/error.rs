@@ -8,6 +8,6 @@ pub enum RumboError {
 
 impl From<mongodb::error::Error> for RumboError {
     fn from(value: mongodb::error::Error) -> Self {
-        RumboError::MongoError(value.to_string())
+        RumboError::MongoError(format!("{:?}", value))
     }
 }

@@ -13,6 +13,7 @@ pub mod prelude {
     pub use super::cpu::CpuUsageInfo;
     pub use super::disk::DiskSpaceInfo;
     pub use super::disk::DiskUsageInfo;
+    pub use super::health::HealthInfo;
     pub use super::network::NetworkUsageInfo;
     pub use super::ram::RamSpaceInfo;
 
@@ -24,6 +25,7 @@ use prelude::*;
 
 mod cpu;
 mod disk;
+mod health;
 mod network;
 mod ram;
 
@@ -52,6 +54,8 @@ pub enum MetricType {
     NetworkUsage(NetworkUsageInfo),
 
     CpuUsage(CpuUsageInfo),
+
+    HealthCheck(HealthInfo),
 }
 
 pub struct MetricsService {
