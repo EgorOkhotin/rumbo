@@ -1,7 +1,6 @@
 pub mod prelude {
     pub(super) use mongodb::{
         bson::serde_helpers::bson_datetime_as_rfc3339_string,
-        bson::serde_helpers::deserialize_hex_string_from_object_id,
         bson::{doc, DateTime},
         Collection,
     };
@@ -14,6 +13,7 @@ pub mod prelude {
     pub use super::cpu::CpuUsageInfo;
     pub use super::disk::DiskSpaceInfo;
     pub use super::disk::DiskUsageInfo;
+    pub use super::health::HealthInfo;
     pub use super::network::NetworkUsageInfo;
     pub use super::ram::RamSpaceInfo;
 
@@ -21,11 +21,12 @@ pub mod prelude {
     pub use super::MetricType;
     pub use super::MetricsService;
 }
-use mongodb::{options::InsertOneOptions, bson::{Document, oid::ObjectId, Bson}};
+use mongodb::bson::{oid::ObjectId, Document};
 use prelude::*;
 
 mod cpu;
 mod disk;
+mod health;
 mod network;
 mod ram;
 
@@ -52,6 +53,8 @@ pub enum MetricType {
     NetworkUsage(NetworkUsageInfo),
 
     CpuUsage(CpuUsageInfo),
+
+    HealthCheck(HealthInfo),
 }
 
 pub struct MetricsService {
