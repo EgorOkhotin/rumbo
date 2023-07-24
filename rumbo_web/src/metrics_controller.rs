@@ -4,7 +4,7 @@ use super::prelude::*;
 pub async fn get_metric(app: web::Data<RumboApp>, path: web::Path<String>) -> impl Responder {
     info!("Tring to get a metric with id={}", &path);
 
-    let metric_service = MetricsService::new(&app);
+    let metric_service = &app.metrics_service;
 
     let id = path.to_string();
 
@@ -25,7 +25,7 @@ pub async fn get_metric(app: web::Data<RumboApp>, path: web::Path<String>) -> im
 pub async fn create_metric(app: web::Data<RumboApp>, metric: web::Json<Metric>) -> impl Responder {
     info!("Trying to create metric with id");
 
-    let metric_service = MetricsService::new(&app);
+    let metric_service = &app.metrics_service;
     let result = metric_service.create(&metric.0).await.unwrap();
 
     return HttpResponse::Ok()
@@ -37,7 +37,7 @@ pub async fn create_metric(app: web::Data<RumboApp>, metric: web::Json<Metric>) 
 pub async fn delete_metric(app: web::Data<RumboApp>, path: web::Path<String>) -> impl Responder {
     info!("Tring to delete metric with id={}", &path);
 
-    let metric_service = MetricsService::new(&app);
+    let metric_service = &app.metrics_service;
 
     let id = path.as_str();
 
@@ -52,7 +52,7 @@ pub async fn delete_metric(app: web::Data<RumboApp>, path: web::Path<String>) ->
 pub async fn update_metric(app: web::Data<RumboApp>, metric: web::Json<Metric>) -> impl Responder {
     info!("Trying to update metric");
 
-    let metric_service = MetricsService::new(&app);
+    let metric_service = &app.metrics_service;
     let result = metric_service.update(&metric.0).await.unwrap();
 
     return HttpResponse::Ok()
