@@ -19,7 +19,7 @@ pub fn get_network_usage() -> Vec<NetworkUsageInfo> {
             let sending_speed = (data.total_received() as f64 / 1024.0f64.powi(2)).round() as u64;
             let receiving_speed =
                 (data.total_transmitted() as f64 / 1024.0f64.powi(2)).round() as u64;
-                NetworkUsageInfo {
+            NetworkUsageInfo {
                 name,
                 sending_speed,
                 receiving_speed,

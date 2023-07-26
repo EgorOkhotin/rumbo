@@ -22,7 +22,10 @@ pub async fn get_instance(app: web::Data<RumboApp>, path: web::Path<String>) -> 
 }
 
 #[post("api/instance")]
-pub async fn create_instance(app: web::Data<RumboApp>, instance: web::Json<Instance>) -> impl Responder {
+pub async fn create_instance(
+    app: web::Data<RumboApp>,
+    instance: web::Json<Instance>,
+) -> impl Responder {
     info!("Trying to create instance with id");
 
     let instances_service = &app.instances_service;
@@ -49,7 +52,10 @@ pub async fn delete_instance(app: web::Data<RumboApp>, path: web::Path<String>) 
 }
 
 #[patch("api/instance")]
-pub async fn update_instance(app: web::Data<RumboApp>, instance: web::Json<Instance>) -> impl Responder {
+pub async fn update_instance(
+    app: web::Data<RumboApp>,
+    instance: web::Json<Instance>,
+) -> impl Responder {
     info!("Trying to update instance");
 
     let instances_service = &app.instances_service;

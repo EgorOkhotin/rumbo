@@ -17,16 +17,18 @@ use prelude::*;
 pub struct Instance {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     id: Option<ObjectId>,
-    name: String
+    name: String,
 }
 
 pub struct InstanceService {
-    db_adapter: Arc<DbAdapter>
+    db_adapter: Arc<DbAdapter>,
 }
 
 impl InstanceService {
     pub fn new(db_adapter: &Arc<DbAdapter>) -> Self {
-        InstanceService { db_adapter: db_adapter.clone() }
+        InstanceService {
+            db_adapter: db_adapter.clone(),
+        }
     }
 
     pub fn as_arc(self) -> Arc<Self> {
