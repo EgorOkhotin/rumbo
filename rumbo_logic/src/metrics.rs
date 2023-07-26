@@ -10,11 +10,12 @@ pub mod prelude {
     // Loading the lib.rs prelude
     pub use super::super::prelude::*;
 
+    pub use super::disk::prelude::*;
+    pub use super::network::prelude::*;
+    pub use super::ram::prelude::*;
+
     pub use super::cpu::CpuUsageInfo;
-    pub use super::disk::DiskSpaceInfo;
-    pub use super::disk::DiskUsageInfo;
     pub use super::health::HealthInfo;
-    pub use super::network::NetworkUsageInfo;
     pub use super::ram::RamSpaceInfo;
 
     pub use super::Metric;

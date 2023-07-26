@@ -1,4 +1,11 @@
-use super::prelude::*;
+pub mod prelude {
+    pub use super::get_disk_spaces;
+    pub use super::DiskSpaceInfo;
+    pub use super::DiskUsageInfo;
+
+    pub(super) use super::super::prelude::*;
+}
+use prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct DiskSpaceInfo {
@@ -15,6 +22,7 @@ pub struct DiskUsageInfo {
     writing_speed: u64,
 }
 
+#[warn(dead_code)]
 pub fn get_disk_spaces() -> Vec<DiskSpaceInfo> {
     let mut system = System::new();
     system.refresh_disks_list();

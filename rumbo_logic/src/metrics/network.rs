@@ -1,4 +1,10 @@
-use super::prelude::*;
+pub mod prelude {
+    pub use super::get_network_usage;
+    pub use super::NetworkUsageInfo;
+
+    pub(super) use super::super::prelude::*;
+}
+use prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct NetworkUsageInfo {
