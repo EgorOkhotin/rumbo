@@ -1,27 +1,24 @@
-use std::collections::HashMap;
-
-use rumbo_logic::prelude::JobClosure;
-use rumbo_logic::prelude::JobInfo;
-use rumbo_logic::prelude::JobScheduler;
-
 pub mod prelude {
+    pub(super) use rumbo_logic::prelude::JobClosure;
+    pub(super) use rumbo_logic::prelude::JobInfo;
+    pub(super) use rumbo_logic::prelude::JobScheduler;
+
     pub use super::super::prelude::*;
-}
 
-pub struct TokioJobScheduler {
-    map: HashMap<JobInfo, Box<dyn JobClosure>>,
+    pub use super::ActixJobScheduler;
 }
+use prelude::*;
 
-impl TokioJobScheduler {
+pub struct ActixJobScheduler;
+
+impl ActixJobScheduler {
     pub fn new() -> Self {
-        TokioJobScheduler {
-            map: HashMap::new(),
-        }
+        ActixJobScheduler
     }
 }
 
-impl JobScheduler for TokioJobScheduler {
-    fn add_job(&mut self, info: rumbo_logic::prelude::JobInfo, func: Box<dyn JobClosure>) {
+impl JobScheduler for ActixJobScheduler {
+    fn add_job(&mut self, info: JobInfo, func: Box<dyn JobClosure>) {
         actix_web::rt::spawn(async move {
             let duration = info.get_sleep_time();
             let mut info = info;

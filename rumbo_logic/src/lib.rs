@@ -5,17 +5,15 @@ pub mod prelude {
     pub type Result<T> = std::result::Result<T, RumboError>;
     pub use super::db::*;
     pub use super::error::RumboError;
+    pub use super::jobs::JobClosure;
     pub use super::RumboApp;
+
+    pub(super) use super::instances::InstanceService;
 
     pub use super::instances::prelude::*;
     pub use super::jobs::prelude::*;
     pub use super::metrics::prelude::*;
 }
-use std::time::Duration;
-
-use instances::InstanceService;
-use jobs::JobClosure;
-use mongodb::bson::DateTime;
 use prelude::*;
 
 mod db;
@@ -57,7 +55,7 @@ impl RumboApp {
     }
 }
 
-async fn add_jobs_to_schedule<T: JobScheduler>(job_scheduler: &mut T) {
+async fn add_jobs_to_schedule<T: JobScheduler>(_job_scheduler: &mut T) {
     // load info from DB
     // add jobs to scheduler
     // done
@@ -70,7 +68,7 @@ async fn add_jobs_to_schedule<T: JobScheduler>(job_scheduler: &mut T) {
 struct TestJob;
 #[async_trait]
 impl JobClosure for TestJob {
-    async fn invoke(&self, job_info: &mut JobInfo) {
+    async fn invoke(&self, _job_info: &mut JobInfo) {
         warn!("It's a test job");
     }
 }

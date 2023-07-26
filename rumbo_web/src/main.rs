@@ -11,7 +11,7 @@ mod prelude {
     pub use std::env;
     pub use std::io::Write;
 
-    pub(super) use super::scheduler::TokioJobScheduler;
+    pub(super) use super::scheduler::prelude::*;
 
     pub use rumbo_logic::prelude::*;
 }
@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
     info!("Program started");
 
     let config = get_config();
-    let mut scheduler = TokioJobScheduler::new();
+    let mut scheduler = ActixJobScheduler::new();
     let app_sate = get_app_state(&config, &mut scheduler).await.unwrap();
 
     HttpServer::new(move || {
