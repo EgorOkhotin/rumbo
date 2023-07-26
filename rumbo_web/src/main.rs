@@ -11,13 +11,16 @@ mod prelude {
     pub use std::env;
     pub use std::io::Write;
 
+    pub(super) use super::scheduler::TokioJobScheduler;
+
     pub use rumbo_logic::prelude::*;
 }
 use prelude::*;
 
 mod config;
-mod metrics_controller;
 mod instances_controller;
+mod metrics_controller;
+mod scheduler;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -26,23 +29,21 @@ async fn main() -> std::io::Result<()> {
     info!("Program started");
 
     let config = get_config();
-    let app_sate = get_app_state(&config).await.unwrap();
+    let mut scheduler = TokioJobScheduler::new();
+    let app_sate = get_app_state(&config, &mut scheduler).await.unwrap();
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(app_sate.clone()))
             .wrap(middleware::Logger::default())
-
             .service(metrics_controller::get_metric)
             .service(metrics_controller::create_metric)
             .service(metrics_controller::delete_metric)
             .service(metrics_controller::update_metric)
-
             .service(instances_controller::get_instance)
             .service(instances_controller::create_instance)
             .service(instances_controller::delete_instance)
             .service(instances_controller::update_instance)
-
             .service(fs::Files::new("/", config.static_files_path).index_file("index.html"))
     })
     .bind((config.host_address, config.port))?
@@ -50,8 +51,11 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-async fn get_app_state(config: &ConfigValues) -> Result<RumboApp> {
-    let app = RumboApp::new(&config.mongo_host, config.mongo_app_name).await?;
+async fn get_app_state<T>(config: &ConfigValues, job_scheduler: &mut T) -> Result<RumboApp>
+where
+    T: JobScheduler,
+{
+    let app = RumboApp::new(&config.mongo_host, config.mongo_app_name, job_scheduler).await?;
 
     Ok(app)
 }
