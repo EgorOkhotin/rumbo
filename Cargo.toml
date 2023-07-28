@@ -2,6 +2,7 @@
 
 members = [
     "rumbo_web",
-    "rumbo_logic"
+    "rumbo_logic",
+    "rumbo_daemon"
 ]
 
