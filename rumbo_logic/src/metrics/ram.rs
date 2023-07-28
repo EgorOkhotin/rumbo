@@ -1,4 +1,10 @@
-use super::prelude::*;
+pub mod prelude {
+    pub use super::get_ram;
+    pub use super::RamSpaceInfo;
+
+    pub(super) use super::super::prelude::*;
+}
+use prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct RamSpaceInfo {

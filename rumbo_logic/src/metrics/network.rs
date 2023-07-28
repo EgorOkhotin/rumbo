@@ -1,4 +1,10 @@
-use super::prelude::*;
+pub mod prelude {
+    pub use super::get_network_usage;
+    pub use super::NetworkUsageInfo;
+
+    pub(super) use super::super::prelude::*;
+}
+use prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct NetworkUsageInfo {
@@ -19,7 +25,7 @@ pub fn get_network_usage() -> Vec<NetworkUsageInfo> {
             let sending_speed = (data.total_received() as f64 / 1024.0f64.powi(2)).round() as u64;
             let receiving_speed =
                 (data.total_transmitted() as f64 / 1024.0f64.powi(2)).round() as u64;
-                NetworkUsageInfo {
+            NetworkUsageInfo {
                 name,
                 sending_speed,
                 receiving_speed,
