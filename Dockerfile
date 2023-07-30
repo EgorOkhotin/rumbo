@@ -1,6 +1,7 @@
 FROM node:latest as uiBuild
 WORKDIR /rumbo-ui
 COPY ./rumbo-ui/ /rumbo-ui
+RUN npm install
 RUN npm install -g @angular/cli
 RUN ng build -c production
 
