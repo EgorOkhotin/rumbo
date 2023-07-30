@@ -1,0 +1,17 @@
+
+.vscode
+.git
+
+/rumbo_ui/.angular
+/rumbo_ui/.vscode
+/rumbo_ui/dist
+/rumbo_ui/package-lock.json
+/rumbo_ui/node_modules
+
+target
+**/target
+
+Cargo.lock
+.gitignore
+docker-compose.yml
+README.md

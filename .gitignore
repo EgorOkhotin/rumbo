@@ -22,14 +22,14 @@ Cargo.lock
 **.angular
 
 # Compiled output
-/dist
+**/dist
 /tmp
 /out-tsc
 # Only exists if Bazel was run
 /bazel-out
 
 # Dependencies
-/node_modules
+**/node_modules
 
 # Cordova
 /www

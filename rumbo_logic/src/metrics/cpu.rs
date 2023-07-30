@@ -1,11 +1,12 @@
-use sysinfo::{CpuExt, CpuRefreshKind, RefreshKind, System, SystemExt};
+use super::prelude::*;
 
-pub struct CpuUsage {
-    pub core: u8,
-    pub load_percentage: u8,
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct CpuUsageInfo {
+    core: u8,
+    load_percents: u8,
 }
 
-fn get_cpu_usage() -> Vec<CpuUsage> {
+fn get_cpu_usage_info() -> Vec<CpuUsageInfo> {
     let mut system =
         System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
     std::thread::sleep(System::MINIMUM_CPU_UPDATE_INTERVAL * 5);
@@ -16,11 +17,11 @@ fn get_cpu_usage() -> Vec<CpuUsage> {
         .into_iter()
         .map(|cpu| {
             let core = i;
-            let load_percentage = cpu.cpu_usage() as u8;
+            let load_percents = cpu.cpu_usage() as u8;
             i += 1;
-            CpuUsage {
+            CpuUsageInfo {
                 core,
-                load_percentage,
+                load_percents,
             }
         })
         .collect::<Vec<_>>();
