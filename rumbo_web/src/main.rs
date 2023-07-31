@@ -2,8 +2,11 @@ mod prelude {
     pub use super::config::ConfigValues;
     pub use actix_files as fs;
     pub use actix_web::{
-        delete, get, http::header::ContentType, middleware, patch, post, web, App, HttpResponse,
-        HttpServer, Responder,
+        delete,
+        dev::{ServiceFactory, ServiceRequest},
+        get,
+        http::header::ContentType,
+        middleware, patch, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
     };
     pub use chrono::Local;
     pub use env_logger::Builder;
@@ -21,6 +24,7 @@ mod config;
 mod instances_controller;
 mod metrics_controller;
 mod scheduler;
+mod users_controller;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -33,18 +37,14 @@ async fn main() -> std::io::Result<()> {
     let app_sate = get_app_state(&config, &mut scheduler).await.unwrap();
 
     HttpServer::new(move || {
-        App::new()
+        let mut app = App::new()
             .app_data(web::Data::new(app_sate.clone()))
-            .wrap(middleware::Logger::default())
-            .service(metrics_controller::get_metric)
-            .service(metrics_controller::create_metric)
-            .service(metrics_controller::delete_metric)
-            .service(metrics_controller::update_metric)
-            .service(instances_controller::get_instance)
-            .service(instances_controller::create_instance)
-            .service(instances_controller::delete_instance)
-            .service(instances_controller::update_instance)
-            .service(fs::Files::new("/", config.static_files_path).index_file("index.html"))
+            .wrap(middleware::Logger::default());
+
+        app = instances_controller::add_services(app);
+        app = metrics_controller::add_services(app);
+
+        app.service(fs::Files::new("/", config.static_files_path).index_file("index.html"))
     })
     .bind((config.host_address, config.port))?
     .run()
@@ -55,7 +55,13 @@ async fn get_app_state<T>(config: &ConfigValues, job_scheduler: &mut T) -> Resul
 where
     T: JobScheduler,
 {
-    let app = RumboApp::new(&config.mongo_host, config.mongo_app_name, job_scheduler).await?;
+    let app = RumboApp::new(
+        &config.mongo_host,
+        config.mongo_app_name,
+        job_scheduler,
+        None,
+    )
+    .await?;
 
     Ok(app)
 }

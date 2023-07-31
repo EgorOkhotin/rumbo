@@ -8,11 +8,11 @@ pub mod prelude {
     pub use super::jobs::JobClosure;
     pub use super::RumboApp;
 
-    pub(super) use super::instances::InstanceService;
-
     pub use super::instances::prelude::*;
     pub use super::jobs::prelude::*;
     pub use super::metrics::prelude::*;
+    pub use super::security::prelude::*;
+    pub use super::users::prelude::*;
 }
 use prelude::*;
 
@@ -21,6 +21,8 @@ mod error;
 mod instances;
 mod jobs;
 mod metrics;
+mod security;
+mod users;
 
 #[derive(Clone)]
 pub struct RumboApp {
@@ -28,6 +30,7 @@ pub struct RumboApp {
     pub metrics_service: Arc<MetricsService>,
     pub instances_service: Arc<InstanceService>,
     pub jobs_storage_service: Arc<dyn JobStorageService>,
+    pub users_service: Arc<UserService>,
 }
 
 impl RumboApp {
@@ -35,6 +38,7 @@ impl RumboApp {
         host: &str,
         app_name: &str,
         job_scheduler: &mut T,
+        password_salter: Option<Arc<dyn PasswordSalter>>,
     ) -> Result<Self> {
         let adapter = DbAdapter::new(host, app_name).await?;
         let db_arc = Arc::from(adapter);
@@ -43,10 +47,19 @@ impl RumboApp {
         let metrics_service = MetricsService::new(&db_arc, &instances_service).as_arc();
         let jobs_storage_service = MongoJobStorageService::new(&db_arc).as_arc();
 
+        // If password_salter not specified - create the default one.
+        let password_salter: Arc<dyn PasswordSalter> = match password_salter {
+            None => Arc::from(Argon2PasswordSalter),
+            Some(val) => val,
+        };
+
+        let users_service = UserService::new(&db_arc, &password_salter).as_arc();
+
         let app = RumboApp {
             instances_service: instances_service,
             metrics_service: metrics_service,
             jobs_storage_service: jobs_storage_service,
+            users_service: users_service,
         };
 
         add_jobs_to_schedule(job_scheduler).await;

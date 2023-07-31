@@ -1,5 +1,15 @@
 use super::prelude::*;
 
+pub fn add_services<T>(app: App<T>) -> App<T>
+where
+    T: ServiceFactory<ServiceRequest, Config = (), Error = actix_web::Error, InitError = ()>,
+{
+    app.service(get_metric)
+        .service(create_metric)
+        .service(delete_metric)
+        .service(update_metric)
+}
+
 #[get("api/metric/{id}")]
 pub async fn get_metric(app: web::Data<RumboApp>, path: web::Path<String>) -> impl Responder {
     info!("Tring to get a metric with id={}", &path);

@@ -20,6 +20,7 @@ pub struct Instance {
     name: String,
 }
 
+#[derive(Clone)]
 pub struct InstanceService {
     db_adapter: Arc<DbAdapter>,
 }

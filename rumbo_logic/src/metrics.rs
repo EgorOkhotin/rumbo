@@ -59,6 +59,7 @@ pub enum MetricType {
     HealthCheck(HealthInfo),
 }
 
+#[derive(Clone)]
 pub struct MetricsService {
     db_adapter: Arc<DbAdapter>,
     instances_service: Arc<InstanceService>,

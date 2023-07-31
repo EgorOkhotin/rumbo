@@ -6,8 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+argon2 = "0.5.1"
 async-trait = "0.1.72"
 chrono = "0.4.26"
+jwt-compact = "0.7.0"
 log = "0.4.19"
 mongodb = "2.6.0"
 serde = { version = "1.0.167", features = ["derive"] }

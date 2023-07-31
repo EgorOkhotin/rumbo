@@ -1,5 +1,15 @@
 use super::prelude::*;
 
+pub fn add_services<T>(app: App<T>) -> App<T>
+where
+    T: ServiceFactory<ServiceRequest, Config = (), Error = actix_web::Error, InitError = ()>,
+{
+    app.service(get_instance)
+        .service(create_instance)
+        .service(delete_instance)
+        .service(update_instance)
+}
+
 #[get("api/instance/{id}")]
 pub async fn get_instance(app: web::Data<RumboApp>, path: web::Path<String>) -> impl Responder {
     info!("Tring to get a instance with id={}", &path);
