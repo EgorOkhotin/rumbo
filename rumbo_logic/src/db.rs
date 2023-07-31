@@ -10,6 +10,8 @@ pub mod prelude {
 
     pub use super::DbAdapter;
     pub use super::{get_id_filter_from_object, get_id_filter_from_str};
+
+    pub const ID_FIELD_NAME: &str = "_id";
 }
 use prelude::*;
 
@@ -48,5 +50,5 @@ pub fn get_id_filter_from_str(id: &str) -> Document {
 }
 
 pub fn get_id_filter_from_object(id: &ObjectId) -> Document {
-    doc! {"_id": id }
+    doc! {ID_FIELD_NAME: id }
 }

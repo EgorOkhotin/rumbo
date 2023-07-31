@@ -17,7 +17,7 @@ impl MongoJobStorageService {
     }
 
     fn get_collection(&self) -> Collection<JobInfo> {
-        static COLLECTION_NAME: &str = "JobInfo";
+        const COLLECTION_NAME: &str = "JobInfo";
         self.db_adapter.get_collection(COLLECTION_NAME)
     }
 }
@@ -34,7 +34,8 @@ impl JobStorageService for MongoJobStorageService {
             .await?;
 
         if some.modified_count == 0 {
-            return Err(RumboError::MongoError("Updated count = 0".to_string()));
+            const ZERO_MODIFIED_ENTITIES_ERROR_MESSAGE: &str = "Updated count = 0";
+            return Err(RumboError::MongoError(ZERO_MODIFIED_ENTITIES_ERROR_MESSAGE.to_string()));
         }
 
         info!("Updated {} jobs in DB", some.modified_count);
@@ -52,9 +53,9 @@ impl JobStorageService for MongoJobStorageService {
     }
 }
 fn get_id_filter(info: &JobInfo) -> Document {
-    doc! {"_id": &info.name }
+    doc! {ID_FIELD_NAME: &info.name }
 }
 
 fn get_id_filter_from_str(name: &str) -> Document {
-    doc! {"_id": name }
+    doc! {ID_FIELD_NAME: name }
 }

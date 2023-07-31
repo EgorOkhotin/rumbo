@@ -3,7 +3,7 @@ pub mod prelude {
     pub use std::sync::Arc;
 
     pub type Result<T> = std::result::Result<T, RumboError>;
-    pub use super::db::*;
+    pub use super::db::prelude::*;
     pub use super::error::RumboError;
     pub use super::jobs::JobClosure;
     pub use super::RumboApp;
