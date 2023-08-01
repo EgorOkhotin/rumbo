@@ -1,7 +1,7 @@
 pub mod prelude {
     pub(super) use mongodb::{
         bson::serde_helpers::{bson_datetime_as_rfc3339_string, serialize_object_id_as_hex_string},
-        bson::{doc, DateTime, oid::ObjectId},
+        bson::{doc, oid::ObjectId, DateTime},
         Collection,
     };
     pub use serde::{Deserialize, Serialize};
@@ -10,11 +10,12 @@ pub mod prelude {
     // Loading the lib.rs prelude
     pub use super::super::prelude::*;
 
+    pub use super::disk::prelude::*;
+    pub use super::network::prelude::*;
+    pub use super::ram::prelude::*;
+
     pub use super::cpu::CpuUsageInfo;
-    pub use super::disk::DiskSpaceInfo;
-    pub use super::disk::DiskUsageInfo;
     pub use super::health::HealthInfo;
-    pub use super::network::NetworkUsageInfo;
     pub use super::ram::RamSpaceInfo;
 
     pub use super::Metric;
@@ -60,14 +61,14 @@ pub enum MetricType {
 
 pub struct MetricsService {
     db_adapter: Arc<DbAdapter>,
-    instances_service: Arc<InstanceService>
+    instances_service: Arc<InstanceService>,
 }
 
 impl MetricsService {
     pub fn new(db_adapter: &Arc<DbAdapter>, instances_service: &Arc<InstanceService>) -> Self {
         MetricsService {
             db_adapter: db_adapter.clone(),
-            instances_service: instances_service.clone()
+            instances_service: instances_service.clone(),
         }
     }
 
@@ -125,7 +126,10 @@ impl MetricsService {
     }
 
     async fn get_instance(&self, metric: &Metric) -> Result<Instance> {
-        let instance = self.instances_service.get(metric.instance_id.to_hex().as_str()).await?;
+        let instance = self
+            .instances_service
+            .get(metric.instance_id.to_hex().as_str())
+            .await?;
         if instance.is_none() {
             todo!("return error that instance doesn't exist");
         }

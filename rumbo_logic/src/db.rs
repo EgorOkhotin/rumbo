@@ -1,9 +1,8 @@
 pub mod prelude {
     pub(super) use mongodb::{
-        options::ClientOptions, 
-        Client, 
-        Collection,
-        bson::{doc, Document, oid::ObjectId}
+        bson::{doc, oid::ObjectId, Document},
+        options::ClientOptions,
+        Client, Collection,
     };
 
     // use from lib.rs
@@ -11,13 +10,14 @@ pub mod prelude {
 
     pub use super::DbAdapter;
     pub use super::{get_id_filter_from_object, get_id_filter_from_str};
+
+    pub const ID_FIELD_NAME: &str = "_id";
 }
 use prelude::*;
 
-
 #[derive(Clone)]
 pub struct DbAdapter {
-    client: Client
+    client: Client,
 }
 
 const DB_NAME: &'static str = "rumbo_app";
@@ -25,22 +25,22 @@ const DB_NAME: &'static str = "rumbo_app";
 impl DbAdapter {
     pub async fn new(host: &str, app_name: &str) -> Result<Self> {
         let mut client_options = ClientOptions::parse(host).await?;
-        
+
         // Manually set an option.
         client_options.app_name = Some(app_name.to_string());
 
         // Get a handle to the deployment.
         let client = Client::with_options(client_options)?;
 
-        let result = DbAdapter {
-            client: client
-        };
+        let result = DbAdapter { client: client };
 
         Ok(result)
     }
 
     pub fn get_collection<T>(&self, collection_name: &str) -> Collection<T> {
-        self.client.database(DB_NAME).collection::<T>(collection_name)
+        self.client
+            .database(DB_NAME)
+            .collection::<T>(collection_name)
     }
 }
 
@@ -50,5 +50,5 @@ pub fn get_id_filter_from_str(id: &str) -> Document {
 }
 
 pub fn get_id_filter_from_object(id: &ObjectId) -> Document {
-    doc! {"_id": id }
+    doc! {ID_FIELD_NAME: id }
 }
