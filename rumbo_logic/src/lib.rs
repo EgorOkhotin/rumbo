@@ -1,5 +1,5 @@
 pub mod prelude {
-    pub(super) use log::{info, warn};
+    pub use log::{info, warn};
     pub use std::sync::Arc;
 
     pub type Result<T> = std::result::Result<T, RumboError>;

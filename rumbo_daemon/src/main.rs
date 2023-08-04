@@ -1,8 +1,11 @@
 mod config;
+mod jobs;
 use std::collections::BTreeMap;
+use std::time::Duration;
 use jobs::DaemonJobScheduler;
 
 use crate::config::AppConfig;
+use rumbo_logic::prelude::*;
 use rumbo_logic::prelude::JobInfo;
 use rumbo_logic::prelude::JobScheduler;
 
@@ -20,7 +23,7 @@ async fn main() ->  std::io::Result<()>{
   Ok(())
 }
 
-async fn add_jobs_to_schedule<T: JobScheduler>(_job_scheduler: &mut T) {
+async fn add_jobs_to_schedule<T: JobScheduler>(job_scheduler: &mut T) {
     // load info from DB
     // add jobs to scheduler
     // done
