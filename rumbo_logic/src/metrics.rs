@@ -5,7 +5,9 @@ pub mod prelude {
         Collection,
     };
     pub use serde::{Deserialize, Serialize};
-    pub(super) use sysinfo::{DiskExt, NetworkExt, System, SystemExt};
+    pub(super) use sysinfo::{
+        CpuExt, CpuRefreshKind, DiskExt, NetworkExt, RefreshKind, System, SystemExt,
+    };
 
     // Loading the lib.rs prelude
     pub use super::super::prelude::*;
