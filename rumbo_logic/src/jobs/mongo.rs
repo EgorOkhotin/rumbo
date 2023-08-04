@@ -35,7 +35,9 @@ impl JobStorageService for MongoJobStorageService {
 
         if some.modified_count == 0 {
             const ZERO_MODIFIED_ENTITIES_ERROR_MESSAGE: &str = "Updated count = 0";
-            return Err(RumboError::MongoError(ZERO_MODIFIED_ENTITIES_ERROR_MESSAGE.to_string()));
+            return Err(RumboError::MongoError(
+                ZERO_MODIFIED_ENTITIES_ERROR_MESSAGE.to_string(),
+            ));
         }
 
         info!("Updated {} jobs in DB", some.modified_count);

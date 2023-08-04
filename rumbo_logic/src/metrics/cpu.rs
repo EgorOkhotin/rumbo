@@ -18,7 +18,7 @@ fn get_cpu_usage_info() -> Vec<CpuUsageInfo> {
         .map(|cpu| {
             let core = cpu.0 as u8;
             let load_percents = cpu.1.cpu_usage() as u8;
-            
+
             CpuUsageInfo {
                 core,
                 load_percents,
