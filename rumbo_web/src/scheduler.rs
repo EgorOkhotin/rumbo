@@ -15,7 +15,7 @@ impl ActixJobScheduler {
     pub fn new() -> Self {
         ActixJobScheduler
     }
-}
+}   
 
 impl JobScheduler for ActixJobScheduler {
     fn add_job(&mut self, info: JobInfo, func: Box<dyn JobClosure>) {

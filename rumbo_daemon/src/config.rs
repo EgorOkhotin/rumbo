@@ -30,3 +30,4 @@ pub fn read_config_file()->String{
 
     return fs::read_to_string(path_to_config).unwrap();
 }
+
