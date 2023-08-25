@@ -1,20 +1,20 @@
 pub mod prelude {
     pub use super::super::prelude::*;
-    pub(super) use mongodb::bson::{doc, DateTime, Document};
     pub(super) use serde::{Deserialize, Serialize};
+    pub(super) use chrono::DateTime;
 
     pub use async_trait::async_trait;
     pub use std::future::Future;
     pub use std::time::Duration;
 
-    pub use super::mongo::MongoJobStorageService;
+    pub use super::postgres::PostgresJobStorageService;
     pub use super::JobClosure;
     pub use super::JobInfo;
     pub use super::JobScheduler;
     pub use super::JobStorageService;
 }
 use prelude::*;
-mod mongo;
+mod postgres;
 
 #[async_trait]
 pub trait JobStorageService: Send + Sync {
@@ -35,7 +35,8 @@ pub trait JobClosure {
 pub struct JobInfo {
     #[serde(rename = "_id")]
     name: String,
-    last_invocation: DateTime,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    last_invocation: DateTime<Utc>,
     sleep_time: Duration,
 }
 
@@ -43,7 +44,7 @@ impl JobInfo {
     pub fn new(name: &str, sleep_time: Duration) -> Self {
         JobInfo {
             name: name.to_string(),
-            last_invocation: DateTime::MIN,
+            last_invocation: DateTime::<Utc>::MIN_UTC,
             sleep_time: sleep_time,
         }
     }
@@ -52,7 +53,7 @@ impl JobInfo {
         self.sleep_time
     }
 
-    pub fn update_last_invocation_time(&mut self, last_invocation: DateTime) {
+    pub fn update_last_invocation_time(&mut self, last_invocation: DateTime<Utc>) {
         self.last_invocation = last_invocation;
     }
 }

@@ -6,9 +6,9 @@ pub async fn get_instance(app: web::Data<RumboApp>, path: web::Path<String>) -> 
 
     let instances_service = &app.instances_service;
 
-    let id = path.to_string();
+    let id = i64::from_str(&path).expect("Incorrect Id format, number was expected.");
 
-    let result = instances_service.get(&id).await.unwrap();
+    let result = instances_service.get(id).await.unwrap();
 
     if let Some(instance) = result {
         return HttpResponse::Ok()
@@ -42,7 +42,7 @@ pub async fn delete_instance(app: web::Data<RumboApp>, path: web::Path<String>) 
 
     let instances_service = &app.instances_service;
 
-    let id = path.as_str();
+    let id = i64::from_str(&path).expect("Invalid Id, number was expected");
 
     instances_service.delete(id).await.unwrap();
 

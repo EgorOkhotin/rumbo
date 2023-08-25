@@ -1,3 +1,5 @@
+# ENV file which contains connection string for diesel ORM
+**.env
 # ================ VS Code ============================
 **.vscode
 

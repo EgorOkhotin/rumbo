@@ -1,6 +1,8 @@
 pub mod prelude {
     pub(super) use log::{info, warn};
+    pub(super) use diesel::prelude::*;
     pub use std::sync::Arc;
+    pub use chrono::Utc;
 
     pub type Result<T> = std::result::Result<T, RumboError>;
     pub use super::db::prelude::*;
@@ -22,9 +24,10 @@ mod instances;
 mod jobs;
 mod metrics;
 
+mod schema;
+
 #[derive(Clone)]
 pub struct RumboApp {
-    // db_adapter: Arc<DbAdapter>,
     pub metrics_service: Arc<MetricsService>,
     pub instances_service: Arc<InstanceService>,
     pub jobs_storage_service: Arc<dyn JobStorageService>,
@@ -32,24 +35,33 @@ pub struct RumboApp {
 
 impl RumboApp {
     pub async fn new<T: JobScheduler>(
-        host: &str,
-        app_name: &str,
+        db_conection_string: &str,
         job_scheduler: &mut T,
     ) -> Result<Self> {
-        let adapter = DbAdapter::new(host, app_name).await?;
-        let db_arc = Arc::from(adapter);
+        info!("Trying to connect to db with connection string: {}", db_conection_string);
+        let adapter = DbAdapter::new(db_conection_string).await?;
+        info!("DB connection established");
 
+        let db_arc = Arc::from(adapter);
+        
         let instances_service = InstanceService::new(&db_arc).as_arc();
-        let metrics_service = MetricsService::new(&db_arc, &instances_service).as_arc();
-        let jobs_storage_service = MongoJobStorageService::new(&db_arc).as_arc();
+        info!("Instances service created");
+
+        let metrics_service = MetricsService::new(&db_arc).as_arc();
+        info!("Metrics service created");
+
+        let jobs_storage_service = PostgresJobStorageService::new(&db_arc).as_arc();
+        info!("Jobs Service created");
 
         let app = RumboApp {
             instances_service: instances_service,
             metrics_service: metrics_service,
             jobs_storage_service: jobs_storage_service,
         };
+        info!("App state created");
 
         add_jobs_to_schedule(job_scheduler).await;
+        info!("Jobs added to schedule");
 
         Ok(app)
     }

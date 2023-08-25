@@ -10,6 +10,7 @@ mod prelude {
     pub use log::{info, LevelFilter};
     pub use std::env;
     pub use std::io::Write;
+    pub use std::str::FromStr;
 
     pub(super) use super::scheduler::prelude::*;
 
@@ -25,12 +26,16 @@ mod scheduler;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     build_logger();
-
     info!("Program started");
 
     let config = get_config();
+    info!("Config is loaded");
+
     let mut scheduler = ActixJobScheduler::new();
+    info!("Scheduler created");
+
     let app_sate = get_app_state(&config, &mut scheduler).await.unwrap();
+    info!("App state created");
 
     HttpServer::new(move || {
         App::new()
@@ -55,7 +60,11 @@ async fn get_app_state<T>(config: &ConfigValues, job_scheduler: &mut T) -> Resul
 where
     T: JobScheduler,
 {
-    let app = RumboApp::new(&config.mongo_host, config.mongo_app_name, job_scheduler).await?;
+    let app = RumboApp::new(
+        &config.db_url,
+        job_scheduler
+    )
+    .await?;
 
     Ok(app)
 }

@@ -1,9 +1,4 @@
 pub mod prelude {
-    pub(super) use mongodb::{
-        bson::serde_helpers::{bson_datetime_as_rfc3339_string, serialize_object_id_as_hex_string},
-        bson::{doc, oid::ObjectId, DateTime},
-        Collection,
-    };
     pub use serde::{Deserialize, Serialize};
     pub(super) use sysinfo::{
         CpuExt, CpuRefreshKind, DiskExt, NetworkExt, RefreshKind, System, SystemExt,
@@ -34,14 +29,11 @@ mod ram;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Metric {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    pub id: i64,
+    pub instance_id: i64,
 
-    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
-    pub instance_id: ObjectId,
-
-    #[serde(with = "bson_datetime_as_rfc3339_string")]
-    timestamp: DateTime,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    creating_date: chrono::DateTime<Utc>,
 
     metric_value: MetricType,
 }
@@ -51,26 +43,20 @@ pub struct Metric {
 pub enum MetricType {
     DiskUsage(DiskUsageInfo),
     DiskSpace(DiskSpaceInfo),
-
     RamSpace(RamSpaceInfo),
-
     NetworkUsage(NetworkUsageInfo),
-
     CpuUsage(CpuUsageInfo),
-
     HealthCheck(HealthInfo),
 }
 
 pub struct MetricsService {
     db_adapter: Arc<DbAdapter>,
-    instances_service: Arc<InstanceService>,
 }
 
 impl MetricsService {
-    pub fn new(db_adapter: &Arc<DbAdapter>, instances_service: &Arc<InstanceService>) -> Self {
+    pub fn new(db_adapter: &Arc<DbAdapter>) -> Self {
         MetricsService {
             db_adapter: db_adapter.clone(),
-            instances_service: instances_service.clone(),
         }
     }
 
@@ -78,69 +64,164 @@ impl MetricsService {
         Arc::from(self)
     }
 
-    pub async fn create(&self, metric: &Metric) -> Result<Metric> {
-        let collection = self.get_collection();
+    pub async fn create(&self, metric: Metric) -> Result<Metric> {
+        use crate::schema::metrics;
 
-        self.get_instance(metric).await?;
+        let metric = MetricSqlRow::from(metric);
+        let metric = NewMetricSqlRow::from(metric);
 
-        let result = collection.insert_one(metric, None).await?;
-        let inserted_id = result.inserted_id.as_object_id().unwrap().to_hex();
-        let metric = self.get(&inserted_id).await?.unwrap();
-        Ok(metric)
-    }
+        let mut connection = self.db_adapter.get_connection()?;
+        let result = diesel::insert_into(metrics::table)
+            .values(metric)
+            .returning(MetricSqlRow::as_returning())
+            .get_result(&mut connection)?;
 
-    pub async fn get(&self, id: &str) -> Result<Option<Metric>> {
-        let collection = self.get_collection();
-
-        let filter = get_id_filter_from_str(id);
-        let result = collection.find_one(filter, None).await?;
+        let result = Metric::from(result);
         Ok(result)
     }
 
-    pub async fn delete(&self, id: &str) -> Result<()> {
-        let collection = self.get_collection();
-        let filter = get_id_filter_from_str(id);
+    pub async fn get(&self, metric_id: i64) -> Result<Option<Metric>> {
+        use crate::schema::metrics::dsl::*;
 
-        let _result = collection.delete_one(filter, None).await?;
+        let mut connection = self.db_adapter.get_connection()?;
+        let result: Option<MetricSqlRow> = metrics
+            .find(metric_id)
+            .first::<MetricSqlRow>(&mut connection)
+            .optional()?;
+
+        let result = match result {
+            Some(value) => Some(Metric::from(value)),
+            None => None
+        };
+
+        Ok(result)
+    }
+
+    pub async fn delete(&self, metric_id: i64) -> Result<()> {
+        use crate::schema::metrics::dsl::*;
+
+        let mut connection = self.db_adapter.get_connection()?;
+        diesel::delete(metrics.find(metric_id)).execute(&mut connection)?;
         Ok(())
     }
 
-    pub async fn update(&self, metric: &Metric) -> Result<Metric> {
-        let collection = self.get_collection();
+    pub async fn update(&self, metric: Metric) -> Result<Metric> {
+        use crate::schema::metrics::dsl::*;
 
-        let id = metric.id.unwrap();
-        let filter = get_id_filter_from_object(&id);
+        let metric = MetricSqlRow::from(metric);
 
-        // just check that instance exists
-        self.get_instance(metric).await?;
+        let mut connection = self.db_adapter.get_connection()?;
+        let result = diesel::update(metrics.find(metric.id))
+            .set(metric)
+            .returning(MetricSqlRow::as_returning())
+            .get_result(&mut connection)?;
 
-        let result = collection.replace_one(filter, metric, None).await?;
+        let result = Metric::from(result);
+        Ok(result)
+    }
+}
 
-        if result.modified_count > 0 {
-            info!("Updated entities count = {}", result.modified_count);
+#[derive(Queryable, Selectable, AsChangeset)]
+#[diesel(table_name = crate::schema::metrics)]
+#[diesel(primary_key(id))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+struct MetricSqlRow {
+    id: i64,
+    instance_id: i64,
+    metric_type: String,
+    creating_date: chrono::NaiveDateTime,
+    metric_value: serde_json::Value
+}
 
-            let metric = self.get(&id.to_hex()).await?.unwrap();
-            Ok(metric)
-        } else {
-            let metric = self.get(&id.to_hex()).await?.unwrap();
-            Ok(metric)
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::metrics)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+struct NewMetricSqlRow {
+    instance_id: i64,
+    metric_type: String,
+    creating_date: chrono::NaiveDateTime,
+    metric_value: serde_json::Value
+}
+
+impl From<MetricSqlRow> for Metric {
+    fn from(value: MetricSqlRow) -> Self {
+        let metric_value = match value.metric_type.as_str() {
+            "DiskUsage" => {
+                let val = serde_json::from_value(value.metric_value).unwrap();
+                MetricType::DiskUsage(val)
+            },
+            "DiskSpace" => {
+                let val = serde_json::from_value(value.metric_value).unwrap();
+                MetricType::DiskSpace(val)
+            },
+            "RamSpace" => {
+                let val = serde_json::from_value(value.metric_value).unwrap();
+                MetricType::RamSpace(val)
+            },
+            "NetworkUsage" => {
+                let val = serde_json::from_value(value.metric_value).unwrap();
+                MetricType::NetworkUsage(val)
+            },
+            "CpuUsage" => {
+                let val = serde_json::from_value(value.metric_value).unwrap();
+                MetricType::CpuUsage(val)
+            },
+            "HealthCheck" => {
+                let val = serde_json::from_value(value.metric_value).unwrap();
+                MetricType::HealthCheck(val)
+            },
+            _ => panic!("Unknown metric type!")
+        };
+
+        Metric {
+            id: value.id,
+            instance_id: value.instance_id,
+            creating_date: value.creating_date.and_utc(),
+            metric_value: metric_value
         }
     }
+}
 
-    async fn get_instance(&self, metric: &Metric) -> Result<Instance> {
-        let instance = self
-            .instances_service
-            .get(metric.instance_id.to_hex().as_str())
-            .await?;
-        if instance.is_none() {
-            todo!("return error that instance doesn't exist");
+impl From<Metric> for MetricSqlRow {
+    fn from(value: Metric) -> Self {
+        let (metric_type, metric_value) = match value.metric_value {
+            MetricType::DiskUsage(val) => {
+                ("DiskUsage", serde_json::to_value(&val).unwrap())
+            },
+            MetricType::DiskSpace(val) => {
+                ("DiskSpace", serde_json::to_value(&val).unwrap())
+            },
+            MetricType::RamSpace(val) => {
+                ("RamSpace", serde_json::to_value(&val).unwrap())
+            },
+            MetricType::NetworkUsage(val) => {
+                ("NetworkUsage", serde_json::to_value(&val).unwrap())
+            },
+            MetricType::CpuUsage(val) => {
+                ("CpuUsage", serde_json::to_value(&val).unwrap())
+            },
+            MetricType::HealthCheck(val) => {
+                ("HealthCheck", serde_json::to_value(&val).unwrap())
+            },
+        };
+
+        MetricSqlRow { 
+            id: value.id,
+            instance_id: value.instance_id,
+            creating_date: value.creating_date.naive_utc(),
+            metric_type: metric_type.to_string(),
+            metric_value: metric_value
         }
-
-        Ok(instance.unwrap())
     }
+}
 
-    fn get_collection(&self) -> Collection<Metric> {
-        const COLLECTION_NAME: &'static str = "metrics";
-        self.db_adapter.get_collection::<Metric>(COLLECTION_NAME)
+impl From<MetricSqlRow> for NewMetricSqlRow {
+    fn from(value: MetricSqlRow) -> Self {
+        NewMetricSqlRow {
+            instance_id: value.instance_id,
+            creating_date: value.creating_date,
+            metric_type: value.metric_type,
+            metric_value: value.metric_value
+        }
     }
 }
