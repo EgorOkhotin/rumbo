@@ -19,6 +19,9 @@ pub mod prelude {
     pub use super::MetricType;
     pub use super::MetricsService;
 }
+use std::cmp::Ordering;
+use diesel::dsl::*;
+
 use prelude::*;
 
 mod cpu;
@@ -97,6 +100,32 @@ impl MetricsService {
         Ok(result)
     }
 
+    pub async fn for_period(
+        &self,
+        instance_id: i64,
+        start_period: chrono::DateTime<Utc>,
+        end_period: chrono::DateTime<Utc>,
+        skip: i64,
+        top: i64
+    ) -> Result<Vec<Metric>> {
+
+        let mut connection = self.db_adapter.get_connection()?;
+        let result: Vec<MetricSqlRow> = crate::schema::metrics::dsl::metrics
+            .filter(with_start_date(start_period))
+            .filter(with_end_date(end_period))
+            .filter(with_instance_id(instance_id))
+            .order(crate::schema::metrics::dsl::creating_date.asc())
+            .offset(skip)
+            .limit(top)
+            .load::<MetricSqlRow>(&mut connection)?;
+
+        let result = result.into_iter().map(|row| {
+            Metric::from(row)
+        }).collect();
+
+        Ok(result)
+    }
+
     pub async fn delete(&self, metric_id: i64) -> Result<()> {
         use crate::schema::metrics::dsl::*;
 
@@ -119,6 +148,20 @@ impl MetricsService {
         let result = Metric::from(result);
         Ok(result)
     }
+}
+
+fn with_start_date(date: chrono::DateTime<Utc>) -> GtEq<crate::schema::metrics::creating_date, chrono::NaiveDateTime> {
+    let date = date.naive_utc();
+    crate::schema::metrics::dsl::creating_date.ge(date)
+}
+
+fn with_end_date(date: chrono::DateTime<Utc>) -> LtEq<crate::schema::metrics::creating_date, chrono::NaiveDateTime> {
+    let date = date.naive_utc();
+    crate::schema::metrics::dsl::creating_date.le(date)
+}
+
+fn with_instance_id(instance_id: i64) -> Eq<crate::schema::metrics::id, i64> {
+    crate::schema::metrics::dsl::id.eq(instance_id)
 }
 
 #[derive(Queryable, Selectable, AsChangeset)]

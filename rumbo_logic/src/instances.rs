@@ -69,6 +69,19 @@ impl InstanceService {
         Ok(result)
     }
 
+    pub async fn with_page(&self, skip: i64, top: i64) -> Result<Vec<Instance>> {
+        use crate::schema::instances::dsl::*;
+
+        let mut connection = self.db_adapter.get_connection()?;
+        let result = instances
+            .order(id.asc())
+            .offset(skip)
+            .limit(top)
+            .load::<Instance>(&mut connection)?;
+
+        Ok(result)
+    }
+
     pub async fn delete(&self, instance_id: i64) -> Result<()> {
         use crate::schema::instances::dsl::*;
 
