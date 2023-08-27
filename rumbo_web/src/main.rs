@@ -15,6 +15,8 @@ mod prelude {
     pub(super) use super::scheduler::prelude::*;
 
     pub use rumbo_logic::prelude::*;
+
+    pub const DEFAULT_PAGE_SIZE: i64 = 200;
 }
 use prelude::*;
 

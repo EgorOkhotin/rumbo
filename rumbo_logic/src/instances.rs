@@ -16,7 +16,7 @@ use prelude::*;
 #[diesel(primary_key(id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Instance {
-    id: i64,
+    pub id: i64,
     name: String,
 }
 

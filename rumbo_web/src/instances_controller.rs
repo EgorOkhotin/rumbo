@@ -39,7 +39,7 @@ pub async fn get_all_instances(
     };
 
     let top = match query.top {
-        None => 200,
+        None => DEFAULT_PAGE_SIZE,
         Some(val) => val as i64,
     };
 
@@ -57,7 +57,7 @@ pub async fn create_instance(
     app: web::Data<RumboApp>,
     instance: web::Json<Instance>,
 ) -> impl Responder {
-    info!("Trying to create instance with id");
+    info!("Trying to create new instance");
 
     let instances_service = &app.instances_service;
     let result = instances_service.create(&instance.0).await.unwrap();
@@ -87,7 +87,7 @@ pub async fn update_instance(
     app: web::Data<RumboApp>,
     instance: web::Json<Instance>,
 ) -> impl Responder {
-    info!("Trying to update instance");
+    info!("Trying to update instance with id {}", &instance.id);
 
     let instances_service = &app.instances_service;
     let result = instances_service.update(&instance.0).await.unwrap();

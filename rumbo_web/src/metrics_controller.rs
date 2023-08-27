@@ -42,7 +42,7 @@ pub async fn get_all_metrics(
         Some(val) => val as i64,
     };
     let top = match query.top {
-        None => 200,
+        None => DEFAULT_PAGE_SIZE,
         Some(val) => val as i64,
     };
     let start_period = match query.start_period {
@@ -67,7 +67,7 @@ pub async fn get_all_metrics(
 
 #[post("api/metric")]
 pub async fn create_metric(app: web::Data<RumboApp>, metric: web::Json<Metric>) -> impl Responder {
-    info!("Trying to create metric...");
+    info!("Trying to create metric");
 
     let metric_service = &app.metrics_service;
     let result = metric_service.create(metric.0).await.unwrap();
@@ -79,7 +79,7 @@ pub async fn create_metric(app: web::Data<RumboApp>, metric: web::Json<Metric>) 
 
 #[delete("api/metric/{id}")]
 pub async fn delete_metric(app: web::Data<RumboApp>, path: web::Path<String>) -> impl Responder {
-    info!("Tring to delete metric with id={} ...", &path);
+    info!("Tring to delete metric with id={}", &path);
 
     let metric_service = &app.metrics_service;
 
@@ -94,7 +94,7 @@ pub async fn delete_metric(app: web::Data<RumboApp>, path: web::Path<String>) ->
 
 #[patch("api/metric")]
 pub async fn update_metric(app: web::Data<RumboApp>, metric: web::Json<Metric>) -> impl Responder {
-    info!("Trying to update metric with id={} ...", metric.id);
+    info!("Trying to update metric with id={}", metric.id);
 
     let metric_service = &app.metrics_service;
     let result = metric_service.update(metric.0).await.unwrap();
