@@ -21,6 +21,37 @@ pub async fn get_instance(app: web::Data<RumboApp>, path: web::Path<String>) -> 
         .body("Model wasn't found")
 }
 
+#[derive(Deserialize, Debug)]
+pub struct InstanceQueryParameters {
+    skip: Option<u64>,
+    top: Option<u64>,
+}
+#[get("api/instance")]
+pub async fn get_all_instances(
+    app: web::Data<RumboApp>,
+    query: web::Query<InstanceQueryParameters>,
+) -> impl Responder {
+    info!("Tring to get all instances with filter={:?}", &query);
+
+    let skip = match query.skip {
+        None => 0,
+        Some(val) => val as i64,
+    };
+
+    let top = match query.top {
+        None => 200,
+        Some(val) => val as i64,
+    };
+
+    let instances_service = &app.instances_service;
+
+    let result = instances_service.with_page(skip, top).await.unwrap();
+
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(serde_json::to_string(&result).unwrap())
+}
+
 #[post("api/instance")]
 pub async fn create_instance(
     app: web::Data<RumboApp>,
@@ -31,9 +62,9 @@ pub async fn create_instance(
     let instances_service = &app.instances_service;
     let result = instances_service.create(&instance.0).await.unwrap();
 
-    return HttpResponse::Ok()
+    HttpResponse::Ok()
         .content_type(ContentType::json())
-        .body(serde_json::to_string(&result).unwrap());
+        .body(serde_json::to_string(&result).unwrap())
 }
 
 #[delete("api/instance/{id}")]
@@ -61,7 +92,7 @@ pub async fn update_instance(
     let instances_service = &app.instances_service;
     let result = instances_service.update(&instance.0).await.unwrap();
 
-    return HttpResponse::Ok()
+    HttpResponse::Ok()
         .content_type(ContentType::json())
-        .body(serde_json::to_string(&result).unwrap());
+        .body(serde_json::to_string(&result).unwrap())
 }
