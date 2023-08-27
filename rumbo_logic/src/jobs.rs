@@ -18,7 +18,7 @@ mod postgres;
 
 #[async_trait]
 pub trait JobStorageService: Send + Sync {
-    async fn save(&self, info: JobInfo) -> Result<Option<JobInfo>>;
+    async fn save(&self, info: JobInfo) -> Result<JobInfo>;
     async fn load(&self, name: &str) -> Result<Option<JobInfo>>;
 }
 
@@ -33,7 +33,6 @@ pub trait JobClosure {
 
 #[derive(Serialize, Deserialize, Debug, Eq, Hash, PartialEq)]
 pub struct JobInfo {
-    #[serde(rename = "_id")]
     name: String,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     last_invocation: DateTime<Utc>,

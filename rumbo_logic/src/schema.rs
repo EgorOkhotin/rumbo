@@ -8,6 +8,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    jobs (name) {
+        name -> Text,
+        last_invocation -> Timestamp,
+        sleep_time -> Interval,
+    }
+}
+
+diesel::table! {
     metrics (id) {
         id -> Int8,
         instance_id -> Int8,
@@ -21,5 +29,6 @@ diesel::joinable!(metrics -> instances (instance_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     instances,
+    jobs,
     metrics,
 );

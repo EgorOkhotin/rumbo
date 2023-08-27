@@ -19,7 +19,6 @@ pub mod prelude {
     pub use super::MetricType;
     pub use super::MetricsService;
 }
-use std::cmp::Ordering;
 use diesel::dsl::*;
 
 use prelude::*;
@@ -150,17 +149,21 @@ impl MetricsService {
     }
 }
 
-fn with_start_date(date: chrono::DateTime<Utc>) -> GtEq<crate::schema::metrics::creating_date, chrono::NaiveDateTime> {
+type WithStartDate = GtEq<crate::schema::metrics::creating_date, chrono::NaiveDateTime>;
+type WithEndDate = LtEq<crate::schema::metrics::creating_date, chrono::NaiveDateTime>;
+type WithInstanceId = Eq<crate::schema::metrics::id, i64>;
+
+fn with_start_date(date: chrono::DateTime<Utc>) -> WithStartDate {
     let date = date.naive_utc();
     crate::schema::metrics::dsl::creating_date.ge(date)
 }
 
-fn with_end_date(date: chrono::DateTime<Utc>) -> LtEq<crate::schema::metrics::creating_date, chrono::NaiveDateTime> {
+fn with_end_date(date: chrono::DateTime<Utc>) -> WithEndDate {
     let date = date.naive_utc();
     crate::schema::metrics::dsl::creating_date.le(date)
 }
 
-fn with_instance_id(instance_id: i64) -> Eq<crate::schema::metrics::id, i64> {
+fn with_instance_id(instance_id: i64) -> WithInstanceId {
     crate::schema::metrics::dsl::id.eq(instance_id)
 }
 
