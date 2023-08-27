@@ -27,7 +27,7 @@ pub(super) fn with_instance_id(instance_id: i64) -> WithInstanceId {
 #[diesel(primary_key(id))]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub(super) struct MetricSqlRow {
-    pub(super) id: i64,
+    pub id: i64,
     instance_id: i64,
     metric_type: String,
     creating_date: chrono::NaiveDateTime,

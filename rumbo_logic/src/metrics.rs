@@ -19,6 +19,7 @@ pub mod prelude {
     pub use super::Metric;
     pub use super::MetricType;
     pub use super::MetricsService;
+    pub use super::NewMetric;
 }
 use prelude::*;
 
@@ -38,6 +39,27 @@ pub struct Metric {
     creating_date: chrono::DateTime<Utc>,
 
     metric_value: MetricType,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct NewMetric {
+    pub instance_id: i64,
+
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    creating_date: chrono::DateTime<Utc>,
+
+    metric_value: MetricType,
+}
+
+impl From<NewMetric> for Metric {
+    fn from(value: NewMetric) -> Self {
+        Metric {
+            id: 0,
+            instance_id: value.instance_id,
+            creating_date: value.creating_date,
+            metric_value: value.metric_value,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -66,9 +88,10 @@ impl MetricsService {
         Arc::from(self)
     }
 
-    pub async fn create(&self, metric: Metric) -> Result<Metric> {
+    pub async fn create(&self, metric: NewMetric) -> Result<Metric> {
         use crate::schema::metrics;
 
+        let metric = Metric::from(metric);
         let metric = MetricSqlRow::from(metric);
         let metric = NewMetricSqlRow::from(metric);
 
