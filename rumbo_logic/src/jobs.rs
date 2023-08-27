@@ -1,7 +1,7 @@
 pub mod prelude {
     pub use super::super::prelude::*;
-    pub(super) use serde::{Deserialize, Serialize};
     pub(super) use chrono::DateTime;
+    pub(super) use serde::{Deserialize, Serialize};
 
     pub use async_trait::async_trait;
     pub use std::future::Future;

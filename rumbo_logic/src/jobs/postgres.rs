@@ -3,7 +3,7 @@ use diesel::data_types::PgInterval;
 use super::prelude::*;
 
 pub struct PostgresJobStorageService {
-    db_adapter: Arc<DbAdapter>
+    db_adapter: Arc<DbAdapter>,
 }
 
 impl PostgresJobStorageService {
@@ -55,7 +55,7 @@ impl JobStorageService for PostgresJobStorageService {
 
         let job_info = match stored_job {
             None => self.add_job(info).await?,
-            Some(_) => self.update_job(info).await?
+            Some(_) => self.update_job(info).await?,
         };
 
         Ok(job_info)
@@ -72,7 +72,7 @@ impl JobStorageService for PostgresJobStorageService {
 
         let result = match result {
             Some(value) => Some(JobInfo::from(value)),
-            None => None
+            None => None,
         };
 
         Ok(result)
@@ -86,16 +86,16 @@ impl JobStorageService for PostgresJobStorageService {
 struct JobSqlRow {
     name: String,
     last_invocation: chrono::NaiveDateTime,
-    sleep_time: PgInterval
+    sleep_time: PgInterval,
 }
 
 impl From<JobInfo> for JobSqlRow {
     fn from(value: JobInfo) -> Self {
         warn!("Make safe conversion to the PgInterval");
-        JobSqlRow { 
+        JobSqlRow {
             name: value.name,
             last_invocation: value.last_invocation.naive_utc(),
-            sleep_time: PgInterval::from_microseconds(value.sleep_time.as_micros() as i64)
+            sleep_time: PgInterval::from_microseconds(value.sleep_time.as_micros() as i64),
         }
     }
 }
@@ -106,7 +106,7 @@ impl From<JobSqlRow> for JobInfo {
         JobInfo {
             name: value.name,
             last_invocation: value.last_invocation.and_utc(),
-            sleep_time: Duration::from_micros(value.sleep_time.microseconds as u64)
+            sleep_time: Duration::from_micros(value.sleep_time.microseconds as u64),
         }
     }
 }

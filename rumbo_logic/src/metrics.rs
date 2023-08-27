@@ -1,9 +1,9 @@
 pub mod prelude {
+    pub(super) use super::sql::*;
     pub use serde::{Deserialize, Serialize};
     pub(super) use sysinfo::{
         CpuExt, CpuRefreshKind, DiskExt, NetworkExt, RefreshKind, System, SystemExt,
     };
-    pub(super) use super::sql::*;
 
     // Loading the lib.rs prelude
     pub use super::super::prelude::*;
@@ -93,7 +93,7 @@ impl MetricsService {
 
         let result = match result {
             Some(value) => Some(Metric::from(value)),
-            None => None
+            None => None,
         };
 
         Ok(result)
@@ -105,9 +105,8 @@ impl MetricsService {
         start_period: chrono::DateTime<Utc>,
         end_period: chrono::DateTime<Utc>,
         skip: i64,
-        top: i64
+        top: i64,
     ) -> Result<Vec<Metric>> {
-
         let mut connection = self.db_adapter.get_connection()?;
         let result: Vec<MetricSqlRow> = crate::schema::metrics::dsl::metrics
             .filter(with_start_date(start_period))
@@ -118,9 +117,7 @@ impl MetricsService {
             .limit(top)
             .load::<MetricSqlRow>(&mut connection)?;
 
-        let result = result.into_iter().map(|row| {
-            Metric::from(row)
-        }).collect();
+        let result = result.into_iter().map(|row| Metric::from(row)).collect();
 
         Ok(result)
     }

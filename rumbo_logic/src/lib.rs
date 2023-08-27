@@ -1,8 +1,8 @@
 pub mod prelude {
-    pub(super) use log::{info, warn};
-    pub(super) use diesel::prelude::*;
-    pub use std::sync::Arc;
     pub use chrono::Utc;
+    pub(super) use diesel::prelude::*;
+    pub(super) use log::{info, warn};
+    pub use std::sync::Arc;
 
     pub type Result<T> = std::result::Result<T, RumboError>;
     pub use super::db::prelude::*;
@@ -38,12 +38,15 @@ impl RumboApp {
         db_conection_string: &str,
         job_scheduler: &mut T,
     ) -> Result<Self> {
-        info!("Trying to connect to db with connection string: {}", db_conection_string);
+        info!(
+            "Trying to connect to db with connection string: {}",
+            db_conection_string
+        );
         let adapter = DbAdapter::new(db_conection_string).await?;
         info!("DB connection established");
 
         let db_arc = Arc::from(adapter);
-        
+
         let instances_service = InstanceService::new(&db_arc).as_arc();
         info!("Instances service created");
 

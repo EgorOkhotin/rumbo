@@ -5,7 +5,7 @@ pub fn get_debug_config() -> ConfigValues {
         host_address: "localhost",
         port: 8081,
 
-        db_url: "postgres://postgres:example@localhost/rumbo_app".to_string()
+        db_url: "postgres://postgres:example@localhost/rumbo_app".to_string(),
     }
 }
 
@@ -18,7 +18,7 @@ pub fn get_production_config() -> ConfigValues {
         host_address: "0.0.0.0",
         port: 8081,
 
-        db_url: connection_string
+        db_url: connection_string,
     }
 }
 pub struct ConfigValues {
@@ -26,5 +26,5 @@ pub struct ConfigValues {
     pub host_address: &'static str,
     pub port: u16,
 
-    pub db_url: String
+    pub db_url: String,
 }

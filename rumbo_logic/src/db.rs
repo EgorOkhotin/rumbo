@@ -34,7 +34,7 @@ impl DbAdapter {
         let result = self.pool.get();
         match result {
             Ok(val) => Ok(val),
-            Err(error) => Err(RumboError::PostgresError(error.to_string()))
+            Err(error) => Err(RumboError::PostgresError(error.to_string())),
         }
     }
 }

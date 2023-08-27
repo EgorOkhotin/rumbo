@@ -1,4 +1,4 @@
-mod prelude{
+mod prelude {
     pub use super::super::prelude::*;
     pub(super) use diesel::dsl::*;
 }
@@ -31,7 +31,7 @@ pub(super) struct MetricSqlRow {
     instance_id: i64,
     metric_type: String,
     creating_date: chrono::NaiveDateTime,
-    metric_value: serde_json::Value
+    metric_value: serde_json::Value,
 }
 
 #[derive(Insertable)]
@@ -41,7 +41,7 @@ pub(super) struct NewMetricSqlRow {
     instance_id: i64,
     metric_type: String,
     creating_date: chrono::NaiveDateTime,
-    metric_value: serde_json::Value
+    metric_value: serde_json::Value,
 }
 
 impl From<MetricSqlRow> for Metric {
@@ -50,35 +50,35 @@ impl From<MetricSqlRow> for Metric {
             "DiskUsage" => {
                 let val = serde_json::from_value(value.metric_value).unwrap();
                 MetricType::DiskUsage(val)
-            },
+            }
             "DiskSpace" => {
                 let val = serde_json::from_value(value.metric_value).unwrap();
                 MetricType::DiskSpace(val)
-            },
+            }
             "RamSpace" => {
                 let val = serde_json::from_value(value.metric_value).unwrap();
                 MetricType::RamSpace(val)
-            },
+            }
             "NetworkUsage" => {
                 let val = serde_json::from_value(value.metric_value).unwrap();
                 MetricType::NetworkUsage(val)
-            },
+            }
             "CpuUsage" => {
                 let val = serde_json::from_value(value.metric_value).unwrap();
                 MetricType::CpuUsage(val)
-            },
+            }
             "HealthCheck" => {
                 let val = serde_json::from_value(value.metric_value).unwrap();
                 MetricType::HealthCheck(val)
-            },
-            _ => panic!("Unknown metric type!")
+            }
+            _ => panic!("Unknown metric type!"),
         };
 
         Metric {
             id: value.id,
             instance_id: value.instance_id,
             creating_date: value.creating_date.and_utc(),
-            metric_value: metric_value
+            metric_value: metric_value,
         }
     }
 }
@@ -86,32 +86,20 @@ impl From<MetricSqlRow> for Metric {
 impl From<Metric> for MetricSqlRow {
     fn from(value: Metric) -> Self {
         let (metric_type, metric_value) = match value.metric_value {
-            MetricType::DiskUsage(val) => {
-                ("DiskUsage", serde_json::to_value(&val).unwrap())
-            },
-            MetricType::DiskSpace(val) => {
-                ("DiskSpace", serde_json::to_value(&val).unwrap())
-            },
-            MetricType::RamSpace(val) => {
-                ("RamSpace", serde_json::to_value(&val).unwrap())
-            },
-            MetricType::NetworkUsage(val) => {
-                ("NetworkUsage", serde_json::to_value(&val).unwrap())
-            },
-            MetricType::CpuUsage(val) => {
-                ("CpuUsage", serde_json::to_value(&val).unwrap())
-            },
-            MetricType::HealthCheck(val) => {
-                ("HealthCheck", serde_json::to_value(&val).unwrap())
-            },
+            MetricType::DiskUsage(val) => ("DiskUsage", serde_json::to_value(&val).unwrap()),
+            MetricType::DiskSpace(val) => ("DiskSpace", serde_json::to_value(&val).unwrap()),
+            MetricType::RamSpace(val) => ("RamSpace", serde_json::to_value(&val).unwrap()),
+            MetricType::NetworkUsage(val) => ("NetworkUsage", serde_json::to_value(&val).unwrap()),
+            MetricType::CpuUsage(val) => ("CpuUsage", serde_json::to_value(&val).unwrap()),
+            MetricType::HealthCheck(val) => ("HealthCheck", serde_json::to_value(&val).unwrap()),
         };
 
-        MetricSqlRow { 
+        MetricSqlRow {
             id: value.id,
             instance_id: value.instance_id,
             creating_date: value.creating_date.naive_utc(),
             metric_type: metric_type.to_string(),
-            metric_value: metric_value
+            metric_value: metric_value,
         }
     }
 }
@@ -122,7 +110,7 @@ impl From<MetricSqlRow> for NewMetricSqlRow {
             instance_id: value.instance_id,
             creating_date: value.creating_date,
             metric_type: value.metric_type,
-            metric_value: value.metric_value
+            metric_value: value.metric_value,
         }
     }
 }

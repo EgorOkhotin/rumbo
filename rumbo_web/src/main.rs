@@ -60,11 +60,7 @@ async fn get_app_state<T>(config: &ConfigValues, job_scheduler: &mut T) -> Resul
 where
     T: JobScheduler,
 {
-    let app = RumboApp::new(
-        &config.db_url,
-        job_scheduler
-    )
-    .await?;
+    let app = RumboApp::new(&config.db_url, job_scheduler).await?;
 
     Ok(app)
 }
