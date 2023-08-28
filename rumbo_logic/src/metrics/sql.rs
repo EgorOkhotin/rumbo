@@ -6,7 +6,7 @@ use prelude::*;
 
 type WithStartDate = GtEq<crate::schema::metrics::creating_date, chrono::NaiveDateTime>;
 type WithEndDate = LtEq<crate::schema::metrics::creating_date, chrono::NaiveDateTime>;
-type WithInstanceId = Eq<crate::schema::metrics::id, i64>;
+type WithInstanceId = Eq<crate::schema::metrics::instance_id, i64>;
 
 pub(super) fn with_start_date(date: chrono::DateTime<Utc>) -> WithStartDate {
     let date = date.naive_utc();
@@ -19,7 +19,7 @@ pub(super) fn with_end_date(date: chrono::DateTime<Utc>) -> WithEndDate {
 }
 
 pub(super) fn with_instance_id(instance_id: i64) -> WithInstanceId {
-    crate::schema::metrics::dsl::id.eq(instance_id)
+    crate::schema::metrics::dsl::instance_id.eq(instance_id)
 }
 
 #[derive(Queryable, Selectable, AsChangeset)]

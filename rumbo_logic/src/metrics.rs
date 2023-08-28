@@ -34,20 +34,14 @@ mod sql;
 pub struct Metric {
     pub id: i64,
     pub instance_id: i64,
-
-    #[serde(with = "chrono::serde::ts_milliseconds")]
     creating_date: chrono::DateTime<Utc>,
-
     metric_value: MetricType,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct NewMetric {
     pub instance_id: i64,
-
-    #[serde(with = "chrono::serde::ts_milliseconds")]
     creating_date: chrono::DateTime<Utc>,
-
     metric_value: MetricType,
 }
 
