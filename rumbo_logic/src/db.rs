@@ -1,54 +1,40 @@
 pub mod prelude {
-    pub(super) use mongodb::{
-        bson::{doc, oid::ObjectId, Document},
-        options::ClientOptions,
-        Client, Collection,
+    pub(super) use diesel::{
+        r2d2::{ConnectionManager, Pool},
+        PgConnection,
     };
 
     // use from lib.rs
     pub use super::super::prelude::*;
 
     pub use super::DbAdapter;
-    pub use super::{get_id_filter_from_object, get_id_filter_from_str};
-
-    pub const ID_FIELD_NAME: &str = "_id";
 }
+use diesel::r2d2::PooledConnection;
 use prelude::*;
 
 #[derive(Clone)]
 pub struct DbAdapter {
-    client: Client,
+    pool: Pool<ConnectionManager<PgConnection>>,
 }
 
-const DB_NAME: &'static str = "rumbo_app";
-
 impl DbAdapter {
-    pub async fn new(host: &str, app_name: &str) -> Result<Self> {
-        let mut client_options = ClientOptions::parse(host).await?;
+    pub async fn new(connection_string: &str) -> Result<Self> {
+        let manager = ConnectionManager::<PgConnection>::new(connection_string);
+        info!("Created connection manager");
 
-        // Manually set an option.
-        client_options.app_name = Some(app_name.to_string());
+        let pool = Pool::builder()
+            .build(manager)
+            .expect("Could not build connection pool");
 
-        // Get a handle to the deployment.
-        let client = Client::with_options(client_options)?;
-
-        let result = DbAdapter { client: client };
-
+        let result = DbAdapter { pool };
         Ok(result)
     }
 
-    pub fn get_collection<T>(&self, collection_name: &str) -> Collection<T> {
-        self.client
-            .database(DB_NAME)
-            .collection::<T>(collection_name)
+    pub fn get_connection(&self) -> Result<PooledConnection<ConnectionManager<PgConnection>>> {
+        let result = self.pool.get();
+        match result {
+            Ok(val) => Ok(val),
+            Err(error) => Err(RumboError::PostgresError(error.to_string())),
+        }
     }
-}
-
-pub fn get_id_filter_from_str(id: &str) -> Document {
-    let object_id = ObjectId::parse_str(id).unwrap();
-    get_id_filter_from_object(&object_id)
-}
-
-pub fn get_id_filter_from_object(id: &ObjectId) -> Document {
-    doc! {ID_FIELD_NAME: id }
 }

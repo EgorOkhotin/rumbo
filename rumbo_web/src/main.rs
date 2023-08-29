@@ -10,10 +10,13 @@ mod prelude {
     pub use log::{info, LevelFilter};
     pub use std::env;
     pub use std::io::Write;
+    pub use std::str::FromStr;
 
     pub(super) use super::scheduler::prelude::*;
 
     pub use rumbo_logic::prelude::*;
+
+    pub const DEFAULT_PAGE_SIZE: i64 = 200;
 }
 use prelude::*;
 
@@ -25,22 +28,28 @@ mod scheduler;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     build_logger();
-
     info!("Program started");
 
     let config = get_config();
+    info!("Config is loaded");
+
     let mut scheduler = ActixJobScheduler::new();
+    info!("Scheduler created");
+
     let app_sate = get_app_state(&config, &mut scheduler).await.unwrap();
+    info!("App state created");
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(app_sate.clone()))
             .wrap(middleware::Logger::default())
             .service(metrics_controller::get_metric)
+            .service(metrics_controller::get_all_metrics)
             .service(metrics_controller::create_metric)
             .service(metrics_controller::delete_metric)
             .service(metrics_controller::update_metric)
             .service(instances_controller::get_instance)
+            .service(instances_controller::get_all_instances)
             .service(instances_controller::create_instance)
             .service(instances_controller::delete_instance)
             .service(instances_controller::update_instance)
@@ -55,7 +64,7 @@ async fn get_app_state<T>(config: &ConfigValues, job_scheduler: &mut T) -> Resul
 where
     T: JobScheduler,
 {
-    let app = RumboApp::new(&config.mongo_host, config.mongo_app_name, job_scheduler).await?;
+    let app = RumboApp::new(&config.db_url, job_scheduler).await?;
 
     Ok(app)
 }

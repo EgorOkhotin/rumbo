@@ -1,8 +1,6 @@
 pub mod prelude {
-    pub(super) use mongodb::{
-        bson::{doc, oid::ObjectId},
-        Collection,
-    };
+    pub(super) use diesel::{Insertable, Queryable, Selectable};
+
     pub use serde::{Deserialize, Serialize};
 
     // Loading the lib.rs prelude
@@ -13,11 +11,19 @@ pub mod prelude {
 }
 use prelude::*;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Queryable, Selectable, Insertable, AsChangeset)]
+#[diesel(table_name = crate::schema::instances)]
+#[diesel(primary_key(id))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Instance {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    id: Option<ObjectId>,
+    pub id: i64,
     name: String,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::instances)]
+struct NewInstance<'a> {
+    name: &'a str,
 }
 
 pub struct InstanceService {
@@ -36,51 +42,62 @@ impl InstanceService {
     }
 
     pub async fn create(&self, instance: &Instance) -> Result<Instance> {
-        let collection = self.get_collection();
+        use crate::schema::instances;
 
-        let result = collection.insert_one(instance, None).await?;
-        let inserted_id = result.inserted_id.as_object_id().unwrap().to_hex();
-        let metric = self.get(&inserted_id).await?.unwrap();
-        Ok(metric)
-    }
+        let instance = NewInstance {
+            name: &instance.name,
+        };
 
-    pub async fn get(&self, id: &str) -> Result<Option<Instance>> {
-        let collection = self.get_collection();
+        let mut connection = self.db_adapter.get_connection()?;
+        let result = diesel::insert_into(instances::table)
+            .values(instance)
+            .returning(Instance::as_returning())
+            .get_result(&mut connection)?;
 
-        let filter = get_id_filter_from_str(id);
-        let result = collection.find_one(filter, None).await?;
         Ok(result)
     }
 
-    pub async fn delete(&self, id: &str) -> Result<()> {
-        let collection = self.get_collection();
-        let filter = get_id_filter_from_str(id);
+    pub async fn get(&self, instance_id: i64) -> Result<Option<Instance>> {
+        use crate::schema::instances::dsl::*;
 
-        let _result = collection.delete_one(filter, None).await?;
+        let mut connection = self.db_adapter.get_connection()?;
+        let result = instances
+            .find(instance_id)
+            .first::<Instance>(&mut connection)
+            .optional()?;
+
+        Ok(result)
+    }
+
+    pub async fn with_page(&self, skip: i64, top: i64) -> Result<Vec<Instance>> {
+        use crate::schema::instances::dsl::*;
+
+        let mut connection = self.db_adapter.get_connection()?;
+        let result = instances
+            .order(id.asc())
+            .offset(skip)
+            .limit(top)
+            .load::<Instance>(&mut connection)?;
+
+        Ok(result)
+    }
+
+    pub async fn delete(&self, instance_id: i64) -> Result<()> {
+        use crate::schema::instances::dsl::*;
+
+        let mut connection = self.db_adapter.get_connection()?;
+        diesel::delete(instances.find(instance_id)).execute(&mut connection)?;
         Ok(())
     }
 
     pub async fn update(&self, instance: &Instance) -> Result<Instance> {
-        let collection = self.get_collection();
+        use crate::schema::instances::dsl::*;
 
-        let id = instance.id.unwrap();
-        let filter = get_id_filter_from_object(&id);
-
-        let result = collection.replace_one(filter, instance, None).await?;
-
-        if result.modified_count > 0 {
-            info!("Updated entities count = {}", result.modified_count);
-
-            let metric = self.get(&id.to_hex()).await?.unwrap();
-            Ok(metric)
-        } else {
-            let metric = self.get(&id.to_hex()).await?.unwrap();
-            Ok(metric)
-        }
-    }
-
-    fn get_collection(&self) -> Collection<Instance> {
-        const COLLECTION_NAME: &'static str = "instances";
-        self.db_adapter.get_collection::<Instance>(COLLECTION_NAME)
+        let mut connection = self.db_adapter.get_connection()?;
+        let result = diesel::update(instances.find(instance.id))
+            .set(instance)
+            .returning(Instance::as_returning())
+            .get_result(&mut connection)?;
+        Ok(result)
     }
 }
