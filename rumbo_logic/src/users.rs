@@ -1,9 +1,5 @@
 pub mod prelude {
     pub(super) use super::super::prelude::*;
-    pub(super) use mongodb::bson::doc;
-    pub(super) use mongodb::bson::oid::ObjectId;
-    pub(super) use mongodb::bson::Document;
-    pub(super) use mongodb::Collection;
 
     pub use super::PasswordSalter;
     pub use super::User;
@@ -14,23 +10,23 @@ use prelude::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct User {
-    id: Option<ObjectId>,
+    id: i64,
     pub name: String,
     pub email: String,
     salt_b64: String,
     salted_password_b64: String,
-    instances: Vec<ObjectId>,
+    // instances: Vec<ObjectId>,
 }
 
 impl User {
     fn new(name: String, email: String, salt: String, salted_password: String) -> Self {
         User {
-            id: None,
+            id: 0,
             name,
             email,
             salt_b64: salt,
             salted_password_b64: salted_password,
-            instances: vec![],
+            // instances: vec![],
         }
     }
 }
@@ -63,123 +59,123 @@ impl UserService {
         email: String,
         password: String,
     ) -> Result<User> {
-        let existed_user = self.find_by_email(&email).await?;
+        // let existed_user = self.find_by_email(&email).await?;
 
-        if existed_user.is_some() {
-            return Err(RumboError::UserError(
-                "User alredy existed error".to_string(),
-            ));
-        }
+        // if existed_user.is_some() {
+        //     return Err(RumboError::UserError(
+        //         "User alredy existed error".to_string(),
+        //     ));
+        // }
 
-        let salt = self.salter.gerenate_salt();
-        let salted_password = self.salter.salt_password(&salt, &password)?;
-        let user = User::new(name, email, salt, salted_password);
+        // let salt = self.salter.gerenate_salt();
+        // let salted_password = self.salter.salt_password(&salt, &password)?;
+        // let user = User::new(name, email, salt, salted_password);
 
-        let user = self.create(&user).await?;
+        // let user = self.create(&user).await?;
 
-        Ok(user)
+        // Ok(user)
+        todo!()
     }
 
     pub async fn authorize(&self, email: &String, password: &String) -> Result<User> {
-        let existed_user = self.find_by_email(&email).await?;
+        // let existed_user = self.find_by_email(&email).await?;
 
-        if existed_user.is_none() {
-            return Err(RumboError::UserError("User is not registered".to_string()));
-        }
+        // if existed_user.is_none() {
+        //     return Err(RumboError::UserError("User is not registered".to_string()));
+        // }
 
-        let existed_user = existed_user.unwrap();
+        // let existed_user = existed_user.unwrap();
 
-        let salt = &existed_user.salt_b64;
-        let salted_password = self.salter.salt_password(&salt, &password)?;
+        // let salt = &existed_user.salt_b64;
+        // let salted_password = self.salter.salt_password(&salt, &password)?;
 
-        if !salted_password.eq(&existed_user.salted_password_b64) {
-            return Err(RumboError::UserError("Incorrect password".to_string()));
-        }
+        // if !salted_password.eq(&existed_user.salted_password_b64) {
+        //     return Err(RumboError::UserError("Incorrect password".to_string()));
+        // }
 
-        Ok(existed_user)
+        // Ok(existed_user)
+        todo!()
     }
 
     pub async fn update_user(&self, user: User) -> Result<User> {
-        let user = self.find_by_email(&user.email).await?;
+        // let user = self.find_by_email(&user.email).await?;
 
-        if user.is_none() {
-            return Err(RumboError::UserError(
-                "Update error, user wasn't found in DB".to_string(),
-            ));
-        }
-        self.update(&user.unwrap()).await
+        // if user.is_none() {
+        //     return Err(RumboError::UserError(
+        //         "Update error, user wasn't found in DB".to_string(),
+        //     ));
+        // }
+        // self.update(&user.unwrap()).await
+        todo!()
     }
 
     pub async fn delete_user(&self, email: &str) -> Result<()> {
-        let user = self.find_by_email(email).await?;
+        // let user = self.find_by_email(email).await?;
 
-        if user.is_none() {
-            return Err(RumboError::UserError(
-                "Can't delete user becaue it wasn't found in DB".to_string(),
-            ));
-        }
+        // if user.is_none() {
+        //     return Err(RumboError::UserError(
+        //         "Can't delete user becaue it wasn't found in DB".to_string(),
+        //     ));
+        // }
 
-        self.delete(&user.unwrap().id.unwrap().to_hex()).await
+        // self.delete(&user.unwrap().id.unwrap().to_hex()).await
+        todo!()
     }
 
     async fn find_by_email(&self, email: &str) -> Result<Option<User>> {
-        let collection = self.get_collection();
+        // let collection = self.get_collection();
 
-        let filter = get_email_filter(email);
-        let result = collection.find_one(filter, None).await?;
-        Ok(result)
+        // let filter = get_email_filter(email);
+        // let result = collection.find_one(filter, None).await?;
+        // Ok(result)
+        todo!()
     }
 
     async fn create(&self, user: &User) -> Result<User> {
-        let collection = self.get_collection();
+        // let collection = self.get_collection();
 
-        let result = collection.insert_one(user, None).await?;
-        let inserted_id = result.inserted_id.as_object_id().unwrap().to_hex();
-        let user = self.get(&inserted_id).await?.unwrap();
-        Ok(user)
+        // let result = collection.insert_one(user, None).await?;
+        // let inserted_id = result.inserted_id.as_object_id().unwrap().to_hex();
+        // let user = self.get(&inserted_id).await?.unwrap();
+        // Ok(user)
+        todo!()
     }
 
     async fn get(&self, id: &str) -> Result<Option<User>> {
-        let collection = self.get_collection();
+        // let collection = self.get_collection();
 
-        let filter = get_id_filter_from_str(id);
-        let result = collection.find_one(filter, None).await?;
-        Ok(result)
+        // let filter = get_id_filter_from_str(id);
+        // let result = collection.find_one(filter, None).await?;
+        // Ok(result)
+        todo!()
     }
 
     async fn delete(&self, id: &str) -> Result<()> {
-        let collection = self.get_collection();
-        let filter = get_id_filter_from_str(id);
+        // let collection = self.get_collection();
+        // let filter = get_id_filter_from_str(id);
 
-        let _result = collection.delete_one(filter, None).await?;
-        Ok(())
+        // let _result = collection.delete_one(filter, None).await?;
+        // Ok(())
+        todo!()
     }
 
     async fn update(&self, user: &User) -> Result<User> {
-        let collection = self.get_collection();
+        // let collection = self.get_collection();
 
-        let id = user.id.unwrap();
-        let filter = get_id_filter_from_object(&id);
+        // let id = user.id.unwrap();
+        // let filter = get_id_filter_from_object(&id);
 
-        let result = collection.replace_one(filter, user, None).await?;
+        // let result = collection.replace_one(filter, user, None).await?;
 
-        if result.modified_count > 0 {
-            info!("Updated entities count = {}", result.modified_count);
+        // if result.modified_count > 0 {
+        //     info!("Updated entities count = {}", result.modified_count);
 
-            let user = self.get(&id.to_hex()).await?.unwrap();
-            Ok(user)
-        } else {
-            let user = self.get(&id.to_hex()).await?.unwrap();
-            Ok(user)
-        }
+        //     let user = self.get(&id.to_hex()).await?.unwrap();
+        //     Ok(user)
+        // } else {
+        //     let user = self.get(&id.to_hex()).await?.unwrap();
+        //     Ok(user)
+        // }
+        todo!()
     }
-
-    fn get_collection(&self) -> Collection<User> {
-        const COLLECTION_NAME: &'static str = "users";
-        self.db_adapter.get_collection::<User>(COLLECTION_NAME)
-    }
-}
-
-fn get_email_filter(email: &str) -> Document {
-    doc! { "email" : email }
 }
