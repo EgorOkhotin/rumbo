@@ -21,7 +21,7 @@ pub async fn login(app: web::Data<RumboApp>, info: web::Json<LoginDto>) -> impl 
 
     let service = &app.users_service;
 
-    let result = service.authorize(&info.email, &info.password).await;
+    let result = service.authenticate(&info.email, &info.password).await;
 
     if let Ok(user) = result {
         return HttpResponse::Ok()

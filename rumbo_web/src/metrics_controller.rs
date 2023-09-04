@@ -76,7 +76,10 @@ pub async fn get_all_metrics(
 }
 
 #[post("api/metric")]
-pub async fn create_metric(app: web::Data<RumboApp>, metric: web::Json<NewMetric>) -> impl Responder {
+pub async fn create_metric(
+    app: web::Data<RumboApp>,
+    metric: web::Json<NewMetric>,
+) -> impl Responder {
     info!("Trying to create metric");
 
     let metric_service = &app.metrics_service;

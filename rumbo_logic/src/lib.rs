@@ -12,20 +12,20 @@ pub mod prelude {
 
     pub(super) use super::instances::InstanceService;
 
+    pub use super::auth::prelude::*;
     pub use super::instances::prelude::*;
     pub use super::jobs::prelude::*;
     pub use super::metrics::prelude::*;
-    pub use super::security::prelude::*;
     pub use super::users::prelude::*;
 }
 use prelude::*;
 
+mod auth;
 mod db;
 mod error;
 mod instances;
 mod jobs;
 mod metrics;
-mod security;
 mod users;
 
 mod schema;
@@ -36,11 +36,17 @@ pub struct RumboApp {
     pub instances_service: Arc<InstanceService>,
     pub jobs_storage_service: Arc<dyn JobStorageService>,
     pub users_service: Arc<UserService>,
+
+    pub use_cases_service: Arc<UseCaseService>,
+    pub access_rules_service: Arc<AccessRuleService>,
+    pub authentication_service: Arc<AuthenticationService>,
+    pub authorization_service: Arc<AuthorizationService>,
 }
 
 impl RumboApp {
     pub async fn new<T: JobScheduler>(
         db_conection_string: &str,
+        redis_connection: &str,
         job_scheduler: &mut T,
         password_salter: Option<Arc<dyn PasswordSalter>>,
     ) -> Result<Self> {
@@ -49,9 +55,8 @@ impl RumboApp {
             db_conection_string
         );
         let adapter = DbAdapter::new(db_conection_string).await?;
-        info!("DB connection established");
-
         let db_arc = Arc::from(adapter);
+        info!("DB connection established");
 
         let instances_service = InstanceService::new(&db_arc).as_arc();
         info!("Instances service created");
@@ -72,11 +77,35 @@ impl RumboApp {
         let users_service = UserService::new(&db_arc, &password_salter).as_arc();
         info!("Users service created");
 
+        let token_cache_service = RedisTokenCache::new(redis_connection);
+        info!("Jwt Token cache created");
+
+        let token_service = JwtTokenFactory::new(token_cache_service).as_arc();
+        info!("Jwt Token factory created");
+
+        let authentication_service =
+            AuthenticationService::new(&users_service, &password_salter, &token_service).as_arc();
+        info!("Authentication service created");
+
+        let access_rule_service = AccessRuleService::new(&db_arc).as_arc();
+        info!("Access rule service created");
+
+        let use_case_service = UseCaseService::new(&db_arc).as_arc();
+        info!("Use cases service created");
+
+        let authorization_service = AuthorizationService::new(&access_rule_service).as_arc();
+        info!("authorization service created");
+
         let app = RumboApp {
             instances_service: instances_service,
             metrics_service: metrics_service,
             jobs_storage_service: jobs_storage_service,
             users_service: users_service,
+
+            use_cases_service: use_case_service,
+            access_rules_service: access_rule_service,
+            authentication_service: authentication_service,
+            authorization_service: authorization_service,
         };
         info!("App state created");
 

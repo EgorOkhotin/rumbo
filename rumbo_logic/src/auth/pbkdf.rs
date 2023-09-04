@@ -5,13 +5,10 @@ pub mod prelude {
         password_hash::{rand_core::OsRng, PasswordHasher, Salt, SaltString},
         Argon2,
     };
-    // pub(super) use
 
     pub use super::super::prelude::*;
 }
 use prelude::*;
-
-mod jwt;
 
 pub struct Argon2PasswordSalter;
 impl PasswordSalter for Argon2PasswordSalter {

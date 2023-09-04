@@ -9,6 +9,8 @@ pub enum RumboError {
     PostgresError(String),
     UserError(String),
     ArgonError(String),
+    TokenValidationError(String),
+    RedisCacheError(String)
 }
 
 impl From<r2d2::Error> for RumboError {
@@ -24,9 +26,21 @@ impl From<diesel::result::Error> for RumboError {
 }
 
 impl From<argon2::password_hash::Error> for RumboError {
-    fn from(value: argon2::password_hash::Error) -> Self {
+    fn from(_value: argon2::password_hash::Error) -> Self {
         const ERROR_MESSAGE: &str =
             "Can't create a password hash. Please, check the corectness of input data";
         RumboError::ArgonError(ERROR_MESSAGE.to_string())
+    }
+}
+
+impl From<jwt_compact::ValidationError> for RumboError {
+    fn from(value: jwt_compact::ValidationError) -> Self {
+        RumboError::TokenValidationError(format!("{:?}", value))
+    }
+}
+
+impl From<redis::RedisError> for RumboError {
+    fn from(value: redis::RedisError) -> Self {
+        RumboError::RedisCacheError(format!("{:?}", value))
     }
 }

@@ -1,21 +1,38 @@
 pub mod prelude {
     pub(super) use super::super::prelude::*;
+    pub(super) use diesel::dsl::*;
 
     pub use super::PasswordSalter;
     pub use super::User;
     pub use super::UserService;
 }
-
 use prelude::*;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Selectable, Queryable, AsChangeset)]
+#[diesel(table_name = crate::schema::users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
-    id: i64,
+    pub id: i64,
     pub name: String,
     pub email: String,
+
+    #[diesel(column_name = "salt")]
+    pub(crate) salt_b64: String,
+    #[diesel(column_name = "salted_password")]
+    pub(crate) salted_password_b64: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Insertable)]
+#[diesel(table_name = crate::schema::users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct NewUser {
+    pub name: String,
+    pub email: String,
+
+    #[diesel(column_name = "salt")]
     salt_b64: String,
+    #[diesel(column_name = "salted_password")]
     salted_password_b64: String,
-    // instances: Vec<ObjectId>,
 }
 
 impl User {
@@ -26,7 +43,6 @@ impl User {
             email,
             salt_b64: salt,
             salted_password_b64: salted_password,
-            // instances: vec![],
         }
     }
 }
@@ -59,123 +75,137 @@ impl UserService {
         email: String,
         password: String,
     ) -> Result<User> {
-        // let existed_user = self.find_by_email(&email).await?;
+        let existed_user = self.find_by_email(&email).await?;
 
-        // if existed_user.is_some() {
-        //     return Err(RumboError::UserError(
-        //         "User alredy existed error".to_string(),
-        //     ));
-        // }
+        if existed_user.is_some() {
+            return Err(RumboError::UserError(
+                "User alredy existed error".to_string(),
+            ));
+        }
 
-        // let salt = self.salter.gerenate_salt();
-        // let salted_password = self.salter.salt_password(&salt, &password)?;
-        // let user = User::new(name, email, salt, salted_password);
+        let salt = self.salter.gerenate_salt();
+        let salted_password = self.salter.salt_password(&salt, &password)?;
+        let user = NewUser {
+            name: name,
+            email: email,
+            salt_b64: salt,
+            salted_password_b64: salted_password,
+        };
+        let user = self.create(user).await?;
 
-        // let user = self.create(&user).await?;
-
-        // Ok(user)
-        todo!()
+        Ok(user)
     }
 
-    pub async fn authorize(&self, email: &String, password: &String) -> Result<User> {
-        // let existed_user = self.find_by_email(&email).await?;
+    pub async fn authenticate(&self, email: &String, password: &String) -> Result<User> {
+        let existed_user = self.find_by_email(&email).await?;
 
-        // if existed_user.is_none() {
-        //     return Err(RumboError::UserError("User is not registered".to_string()));
-        // }
+        if existed_user.is_none() {
+            return Err(RumboError::UserError("User is not registered".to_string()));
+        }
 
-        // let existed_user = existed_user.unwrap();
+        let existed_user = existed_user.unwrap();
 
-        // let salt = &existed_user.salt_b64;
-        // let salted_password = self.salter.salt_password(&salt, &password)?;
+        let salt = &existed_user.salt_b64;
+        let salted_password = self.salter.salt_password(&salt, &password)?;
 
-        // if !salted_password.eq(&existed_user.salted_password_b64) {
-        //     return Err(RumboError::UserError("Incorrect password".to_string()));
-        // }
+        if !salted_password.eq(&existed_user.salted_password_b64) {
+            return Err(RumboError::UserError("Incorrect password".to_string()));
+        }
 
-        // Ok(existed_user)
-        todo!()
+        Ok(existed_user)
     }
 
     pub async fn update_user(&self, user: User) -> Result<User> {
-        // let user = self.find_by_email(&user.email).await?;
+        let user = self.find_by_email(&user.email).await?;
 
-        // if user.is_none() {
-        //     return Err(RumboError::UserError(
-        //         "Update error, user wasn't found in DB".to_string(),
-        //     ));
-        // }
-        // self.update(&user.unwrap()).await
-        todo!()
+        if user.is_none() {
+            return Err(RumboError::UserError(
+                "Update error, user wasn't found in DB".to_string(),
+            ));
+        }
+
+        self.update(&user.unwrap()).await
     }
 
     pub async fn delete_user(&self, email: &str) -> Result<()> {
-        // let user = self.find_by_email(email).await?;
+        let user = self.find_by_email(email).await?;
 
-        // if user.is_none() {
-        //     return Err(RumboError::UserError(
-        //         "Can't delete user becaue it wasn't found in DB".to_string(),
-        //     ));
-        // }
+        if user.is_none() {
+            return Err(RumboError::UserError(
+                "Can't delete user becaue it wasn't found in DB".to_string(),
+            ));
+        }
 
-        // self.delete(&user.unwrap().id.unwrap().to_hex()).await
-        todo!()
+        self.delete(user.unwrap().id).await
     }
 
-    async fn find_by_email(&self, email: &str) -> Result<Option<User>> {
-        // let collection = self.get_collection();
-
-        // let filter = get_email_filter(email);
-        // let result = collection.find_one(filter, None).await?;
-        // Ok(result)
-        todo!()
+    pub async fn with_email(&self, user_email: &str) -> Result<Option<User>> {
+        self.find_by_email(user_email).await
     }
 
-    async fn create(&self, user: &User) -> Result<User> {
-        // let collection = self.get_collection();
-
-        // let result = collection.insert_one(user, None).await?;
-        // let inserted_id = result.inserted_id.as_object_id().unwrap().to_hex();
-        // let user = self.get(&inserted_id).await?.unwrap();
-        // Ok(user)
-        todo!()
+    pub async fn with_id(&self, user_id: i64) -> Result<Option<User>> {
+        self.get(user_id).await
     }
 
-    async fn get(&self, id: &str) -> Result<Option<User>> {
-        // let collection = self.get_collection();
+    async fn create(&self, user: NewUser) -> Result<User> {
+        let mut connection = self.db_adapter.get_connection()?;
 
-        // let filter = get_id_filter_from_str(id);
-        // let result = collection.find_one(filter, None).await?;
-        // Ok(result)
-        todo!()
+        let result = diesel::insert_into(crate::schema::users::table)
+            .values(user)
+            .returning(User::as_returning())
+            .get_result(&mut connection)?;
+
+        Ok(result)
     }
 
-    async fn delete(&self, id: &str) -> Result<()> {
-        // let collection = self.get_collection();
-        // let filter = get_id_filter_from_str(id);
+    async fn find_by_email(&self, user_email: &str) -> Result<Option<User>> {
+        use crate::schema::users::dsl::*;
 
-        // let _result = collection.delete_one(filter, None).await?;
-        // Ok(())
-        todo!()
+        let mut connection = self.db_adapter.get_connection()?;
+        let result = users
+            .filter(with_email(user_email))
+            .first::<User>(&mut connection)
+            .optional()?;
+
+        Ok(result)
+    }
+
+    async fn get(&self, user_id: i64) -> Result<Option<User>> {
+        use crate::schema::users::dsl::*;
+        let mut connection = self.db_adapter.get_connection()?;
+
+        let result = users
+            .find(user_id)
+            .first::<User>(&mut connection)
+            .optional()?;
+
+        Ok(result)
+    }
+
+    async fn delete(&self, user_id: i64) -> Result<()> {
+        use crate::schema::users::dsl::*;
+        let mut connection = self.db_adapter.get_connection()?;
+
+        diesel::delete(users.find(user_id)).execute(&mut connection)?;
+
+        Ok(())
     }
 
     async fn update(&self, user: &User) -> Result<User> {
-        // let collection = self.get_collection();
+        use crate::schema::users::dsl::*;
+        let mut connection = self.db_adapter.get_connection()?;
 
-        // let id = user.id.unwrap();
-        // let filter = get_id_filter_from_object(&id);
+        let result = diesel::update(users.find(user.id))
+            .set(user)
+            .returning(User::as_returning())
+            .get_result(&mut connection)?;
 
-        // let result = collection.replace_one(filter, user, None).await?;
-
-        // if result.modified_count > 0 {
-        //     info!("Updated entities count = {}", result.modified_count);
-
-        //     let user = self.get(&id.to_hex()).await?.unwrap();
-        //     Ok(user)
-        // } else {
-        //     let user = self.get(&id.to_hex()).await?.unwrap();
-        //     Ok(user)
-        // }
-        todo!()
+        Ok(result)
     }
+}
+
+type WithEmail<'a> = Eq<crate::schema::users::email, &'a str>;
+
+fn with_email(value: &str) -> WithEmail {
+    crate::schema::users::email.eq(value)
 }
