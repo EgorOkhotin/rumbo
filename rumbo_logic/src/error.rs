@@ -1,10 +1,10 @@
-use diesel::r2d2;
 use super::prelude::*;
-use std::env::VarError;
-use ureq::Error as UreqError;
+use diesel::r2d2;
+use lettre::address::AddressError as LettreAddressError;
 use lettre::error::Error as LettreError;
 use lettre::transport::smtp::Error as LettreSmtpError;
-use lettre::address::AddressError as LettreAddressError;
+use std::env::VarError;
+use ureq::Error as UreqError;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "error_type")]

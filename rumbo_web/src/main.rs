@@ -26,8 +26,7 @@ mod metrics_controller;
 mod scheduler;
 
 use rumbo_logic::{
-    send_telegram_message,
-    EmailAddress, EmailContent, SmtpCredential, send_smtp_email
+    send_smtp_email, send_telegram_message, EmailAddress, EmailContent, SmtpCredential,
 };
 
 #[actix_web::main]
@@ -103,19 +102,17 @@ fn get_config() -> ConfigValues {
     }
 }
 
-
-pub fn send_email_notification(subject: &str, message: String)-> Result<()>{
+pub fn send_email_notification(subject: &str, message: String) -> Result<()> {
     let mut reply_to = None;
     let username = env::var("SMTP_USERNAME")?;
     let password = env::var("SMTP_PASSWORD")?;
     let from = env::var("SMTP_FROM_EMAIL_ADDRESS")?;
     let to = env::var("SMTP_TO_EMAIL_ADDRESS")?;
-    let reply_email = 
-        env::var("SMTP_REPLY_TO_EMAIL_ADDRESS").unwrap_or_default();
+    let reply_email = env::var("SMTP_REPLY_TO_EMAIL_ADDRESS").unwrap_or_default();
     if !reply_email.is_empty() {
         reply_to = Some(reply_email.as_str());
     }
-    
+
     let email_address = EmailAddress::new(&to, &from, reply_to);
     let credential: SmtpCredential = (username, password).into();
     let email_content: EmailContent = (subject, message).into();
@@ -123,14 +120,15 @@ pub fn send_email_notification(subject: &str, message: String)-> Result<()>{
     Ok(())
 }
 
-pub fn send_telegram_notification(message: String)->Result<()>{
+pub fn send_telegram_notification(message: String) -> Result<()> {
     let token = env::var("TELEGRAM_BOT_TOKEN")
-    .map_err(|_|RumboError::GenericError("TELEGRAM_BOT_TOKEN not set".into()))?;
-    let chat_id: i64 = env::var("TELEGRAM_CHAT_ID").map_err(
-        |_|RumboError::GenericError("Missing TELEGRAM_CHAT_ID environment variable".into())
-        )?.parse().map_err(
-            |_|RumboError::GenericError("Error parsing TELEGRAM_CHAT_ID as i64".into())
-        )?;
+        .map_err(|_| RumboError::GenericError("TELEGRAM_BOT_TOKEN not set".into()))?;
+    let chat_id: i64 = env::var("TELEGRAM_CHAT_ID")
+        .map_err(|_| {
+            RumboError::GenericError("Missing TELEGRAM_CHAT_ID environment variable".into())
+        })?
+        .parse()
+        .map_err(|_| RumboError::GenericError("Error parsing TELEGRAM_CHAT_ID as i64".into()))?;
     send_telegram_message(message, &token, chat_id)?;
     Ok(())
 }
