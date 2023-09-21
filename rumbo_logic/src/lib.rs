@@ -23,7 +23,10 @@ mod error;
 mod instances;
 mod jobs;
 mod metrics;
-
+mod notification;
+pub use notification::{
+    send_smtp_email, send_telegram_message, EmailAddress, EmailContent, SmtpCredential,
+};
 mod schema;
 
 #[derive(Clone)]

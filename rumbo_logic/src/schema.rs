@@ -27,8 +27,4 @@ diesel::table! {
 
 diesel::joinable!(metrics -> instances (instance_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    instances,
-    jobs,
-    metrics,
-);
+diesel::allow_tables_to_appear_in_same_query!(instances, jobs, metrics,);
