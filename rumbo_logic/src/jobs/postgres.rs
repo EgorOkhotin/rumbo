@@ -95,7 +95,7 @@ impl From<JobInfo> for JobSqlRow {
         JobSqlRow {
             name: value.name,
             last_invocation: value.last_invocation.naive_utc(),
-            sleep_time: PgInterval::from_microseconds(value.sleep_time.as_micros() as i64),
+            sleep_time: PgInterval::from_microseconds(value.sleep_time.num_microseconds().unwrap()),
         }
     }
 }
@@ -106,7 +106,7 @@ impl From<JobSqlRow> for JobInfo {
         JobInfo {
             name: value.name,
             last_invocation: value.last_invocation.and_utc(),
-            sleep_time: Duration::from_micros(value.sleep_time.microseconds as u64),
+            sleep_time: Duration::microseconds(value.sleep_time.microseconds),
         }
     }
 }

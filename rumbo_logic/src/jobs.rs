@@ -1,10 +1,9 @@
 pub mod prelude {
     pub use super::super::prelude::*;
-    pub(super) use chrono::DateTime;
+    pub(super) use chrono::{DateTime, Duration};
 
     pub use async_trait::async_trait;
     pub use std::future::Future;
-    pub use std::time::Duration;
 
     pub use super::postgres::PostgresJobStorageService;
     pub use super::JobClosure;

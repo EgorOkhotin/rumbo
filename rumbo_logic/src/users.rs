@@ -35,18 +35,6 @@ pub struct NewUser {
     salted_password_b64: String,
 }
 
-impl User {
-    fn new(name: String, email: String, salt: String, salted_password: String) -> Self {
-        User {
-            id: 0,
-            name,
-            email,
-            salt_b64: salt,
-            salted_password_b64: salted_password,
-        }
-    }
-}
-
 pub trait PasswordSalter: Sync + Send {
     fn salt_password(&self, salt_b64: &String, password_b64: &String) -> Result<String>;
     fn gerenate_salt(&self) -> String;
